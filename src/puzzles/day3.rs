@@ -1,27 +1,58 @@
 use nom::{
+    bytes::complete::{tag},
+    character::complete::{char, digit1},
+    combinator::{map_res},
+    sequence::{tuple},
     IResult,
-    character::complete::{digit1, space1},
-    combinator::map_res,
-    multi::separated_list1,
 };
-fn parse_number(input: &str) -> IResult<&str, i32> {
-    map_res(digit1, |digit_str: &str| digit_str.parse::<i32>())(input)
+
+fn parse_integer(input: &str) -> IResult<&str, i32> {
+    map_res(digit1, str::parse)(input)
 }
-fn parse_line(input: &str) -> IResult<&str, Vec<i32>> {
-    separated_list1(space1, parse_number)(input)
+
+fn parse_mul(input: &str) -> IResult<&str, (i32, i32)> {
+    let (input, _) = tag("mul")(input)?;
+    let (input, _) = char('(')(input)?;
+    let (input, (a, _, b)) = tuple((
+        parse_integer,
+        char(','),
+        parse_integer,
+    ))(input)?;
+    let (input, _) = char(')')(input)?;
+    Ok((input, (a, b)))
+}
+
+fn parse_all_muls(input: &str) -> Vec<(i32, i32)> {
+    let mut res = Vec::new();
+    let mut remaining_input = input;
+
+    while !remaining_input.is_empty() {
+        match parse_mul(remaining_input) {
+            Ok((next_input, tuple)) => {
+                res.push(tuple);
+                remaining_input = next_input;
+            },
+            Err(_) => {
+                // Consume one character and continue parsing
+                remaining_input = &remaining_input[1..];
+            },
+        }
+    }
+
+    res
 }
 
 
 pub(crate) fn test() {
-    let input = "";
-    solve(input.to_string());
+    let input = "xmul(2,4)%&mul[3,7]!@^do_not_mul(5,5)+mul(32,64]then(mul(11,8)mul(8,5))";
+    solve(input.to_string()); //161
 }
 
 pub(crate) fn solve(input:String) {
     let mut result = 0;
     for line in input.lines() {
-        let (_, numbers) = parse_line(line).expect("Failed to parse line");
-        result += numbers.iter().sum::<i32>();
+        let pairs = parse_all_muls(line);
+        result += pairs.iter().map(|&(a, b)| a * b).sum::<i32>();
     }
     let part1: i32 = result;
     let part2: i32 = 0;
