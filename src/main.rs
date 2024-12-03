@@ -12,6 +12,11 @@ fn main() {
             match day {
                 "1" => if test {day1::test()} else {  day1::solve(input)},
                 "2" => if test {day2::test()} else {  day2::solve(input)},
+                "3" => if test {day3::test()} else {  day3::solve(input)},
+                "4" => if test {day4::test()} else {  day4::solve(input)},
+                "5" => if test {day5::test()} else {  day5::solve(input)},
+                "6" => if test {day6::test()} else {  day6::solve(input)},
+                "7" => if test {day7::test()} else {  day7::solve(input)},
                 _ => panic!("Day {} not found", day),
             }
         }
