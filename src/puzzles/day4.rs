@@ -206,47 +206,8 @@ fn check_pair(
 }
 
 #[cfg(test)]
-mod tests {
+mod tests_xmas {
     use super::*;
-    
-    #[test]
-    fn test_x_mas_cardinal() {
-        let input = ".M.
-MAS
-.S.";
-        let (part1, part2) = solve(input.to_string());
-        assert_eq!(part1, 0);
-        assert_eq!(part2, 0);
-        
-    }
-    #[test]
-    fn test_x_mas_diagonal() {
-        let input = "M.M
-.A.
-S.S";
-        let (part1, part2) = solve(input.to_string());
-        assert_eq!(part1, 0);
-        assert_eq!(part2, 1);
-
-    }
-    #[test]
-    fn test_x_mas_both() {
-        let input = "MMM
-MAS
-SSS";
-        let (part1, part2) = solve(input.to_string());
-        assert_eq!(part1, 0);
-        assert_eq!(part2, 1);
-    }
-    #[test]
-    fn test_x_mas_none() {
-        let input = "MMM
-AAA
-MMM";
-        let (part1, part2) = solve(input.to_string());
-        assert_eq!(part1, 0);
-        assert_eq!(part2, 0);
-    }
     #[test]
     fn test_provided() {
         let input = "MMMSXXMASM
@@ -262,6 +223,135 @@ MXMXAXMASX";
         let (part1, part2) = solve(input.to_string());
         assert_eq!(part1, 18);
         assert_eq!(part2, 9);
+    }
+    mod part_one {
+        use super::*;
+
+        #[test]
+        fn test_xmas_e() {
+            let input = "XMAS";
+            let (part1, part2) = solve(input.to_string());
+            assert_eq!(part1, 1);
+            assert_eq!(part2, 0);
+        }
+        #[test]
+        fn test_xmas_w() {
+            let input = "SAMX";
+            let (part1, part2) = solve(input.to_string());
+            assert_eq!(part1, 1);
+            assert_eq!(part2, 0);
+        }
+        #[test]
+        fn test_xmas_s() {
+            let input = "X
+M
+A
+S";
+            let (part1, part2) = solve(input.to_string());
+            assert_eq!(part1, 1);
+            assert_eq!(part2, 0);
+        }
+        #[test]
+        fn test_xmas_n() {
+            let input = "S
+A
+M
+X";
+            let (part1, part2) = solve(input.to_string());
+            assert_eq!(part1, 1);
+            assert_eq!(part2, 0);
+        }
+        #[test]
+        fn test_xmas_ne() {
+            let input = "S...
+.A..
+..M.
+...X";
+            let (part1, part2) = solve(input.to_string());
+            assert_eq!(part1, 1);
+            assert_eq!(part2, 0);
+        }
+        #[test]
+        fn test_xmas_se() {
+            let input = "...X
+..M.
+.A..
+S...";
+            let (part1, part2) = solve(input.to_string());
+            assert_eq!(part1, 1);
+            assert_eq!(part2, 0);
+        }
+        #[test]
+        fn test_xmas_sw() {
+            let input = "X...
+.M..
+..A.
+...S";
+            let (part1, part2) = solve(input.to_string());
+            assert_eq!(part1, 1);
+            assert_eq!(part2, 0);
+        }
+        #[test]
+        fn test_xmas_nw() {
+            let input = "...S
+..A.
+.M..
+X...";
+            let (part1, part2) = solve(input.to_string());
+            assert_eq!(part1, 1);
+            assert_eq!(part2, 0);
+        }
+        #[test]
+        fn test_xmas_none() {
+            let input = "X...
+..M.
+..A..
+...S";
+            let (part1, part2) = solve(input.to_string());
+            assert_eq!(part1, 0);
+            assert_eq!(part2, 0);
+        }
+    }
+
+    mod part_two {
+        use super::*;
+
+        #[test]
+        fn test_x_mas_cardinal() {
+            let input = ".M.
+MAS
+.S.";
+            let (part1, part2) = solve(input.to_string());
+            assert_eq!(part1, 0);
+            assert_eq!(part2, 0);
+        }
+        #[test]
+        fn test_x_mas_diagonal() {
+            let input = "M.M
+.A.
+S.S";
+            let (part1, part2) = solve(input.to_string());
+            assert_eq!(part1, 0);
+            assert_eq!(part2, 1);
+        }
+        #[test]
+        fn test_x_mas_both() {
+            let input = "MMM
+MAS
+SSS";
+            let (part1, part2) = solve(input.to_string());
+            assert_eq!(part1, 0);
+            assert_eq!(part2, 1);
+        }
+        #[test]
+        fn test_x_mas_none() {
+            let input = "MMM
+AAA
+MMM";
+            let (part1, part2) = solve(input.to_string());
+            assert_eq!(part1, 0);
+            assert_eq!(part2, 0);
+        }
     }
 
 }
