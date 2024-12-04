@@ -109,17 +109,8 @@ pub(crate) fn test() {
 }
 
 pub(crate) fn solve(input:String) {
-    let mut result1 = 0;
-    for line in input.lines() {
-        let pairs = parse_all_muls(line);
-        result1 += pairs.iter().map(|&(a, b)| a * b).sum::<i32>();
-        
-    }
-    let pairs2 = parse_all_instructions(&*input);
-    println!("Parsed pairs: {:?}", pairs2);
-
-    let part1: i32 = result1;
-    let part2: i32 = pairs2.iter().map(|&(a, b)| a * b).sum::<i32>();
+    let part1: i32 = input.lines().flat_map(parse_all_muls).map(|(a, b)| a * b).sum::<i32>();
+    let part2: i32 = parse_all_instructions(&*input).iter().map(|(a, b)| a * b).sum::<i32>();
 
     println!("part1: {}, part2: {}", part1, part2);
 }
