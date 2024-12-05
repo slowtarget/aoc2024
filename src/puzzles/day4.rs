@@ -8,20 +8,6 @@ fn parse_line(input: &str) -> IResult<&str, Vec<char>> {
     many1(anychar)(input)
 }
 
-pub(crate) fn test() {
-    let input = "MMMSXXMASM
-MSAMXMSMSA
-AMXSXMAAMM
-MSAMASMSMX
-XMASAMXAMM
-XXAMMXXAMA
-SMSMSASXSS
-SAXAMASAAA
-MAMMMXMMMM
-MXMXAXMASX";
-    solve(input.to_string());
-}
-
 pub(crate) fn solve(input: String) -> (u32, u32) {
     // First, build the grid
     let mut grid: Vec<Vec<Point>> = Vec::new();
@@ -190,19 +176,12 @@ fn check_pair(
     dir1: usize,
     dir2: usize,
 ) -> bool {
-    // Get the characters in directions dir1 and dir2
-    let char1 = match grid[y][x].neighbours.get(dir1) {
-        Some(Some((nx, ny))) => grid[*ny][*nx].value,
-        _ => return false,
-    };
+    let pair = [dir1, dir2].map(|dir| {
+        grid[y][x].neighbours.get(dir)
+            .and_then(|&pos| pos.map(|(nx, ny)| grid[ny][nx].value)).unwrap_or_default()
+    }).iter().collect::<String>();
+    pair == "MS" || pair == "SM"
 
-    let char2 = match grid[y][x].neighbours.get(dir2) {
-        Some(Some((nx, ny))) => grid[*ny][*nx].value,
-        _ => return false,
-    };
-
-    // Check if the characters are 'M' and 'S' in any order
-    (char1 == 'M' && char2 == 'S') || (char1 == 'S' && char2 == 'M')
 }
 
 #[cfg(test)]
