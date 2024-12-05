@@ -1,4 +1,5 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::{HashMap, HashSet, BinaryHeap};
+use std::cmp::Reverse;
 use std::fs;
 
 // Function to parse the ordering rules and updates from the input string
@@ -65,32 +66,91 @@ fn middle_page_number(update: &Vec<u32>) -> u32 {
     update[len / 2]
 }
 
-pub (crate) fn solve(input: String) {
+// Function to correct an update according to the ordering rules
+fn correct_update(ordering_rules: &HashSet<(u32, u32)>, update: &Vec<u32>) -> Vec<u32> {
+    // Extract relevant ordering rules
+    let pages_in_update: HashSet<u32> = update.iter().cloned().collect();
+    let mut relevant_rules = Vec::new();
+    for &(x, y) in ordering_rules {
+        if pages_in_update.contains(&x) && pages_in_update.contains(&y) {
+            relevant_rules.push((x, y));
+        }
+    }
+
+    // Build the dependency graph
+    let mut graph: HashMap<u32, Vec<u32>> = HashMap::new(); // Adjacency list
+    let mut in_degree: HashMap<u32, usize> = HashMap::new(); // Incoming edge counts
+
+    // Initialize in_degree for all pages in the update
+    for &page in &pages_in_update {
+        in_degree.insert(page, 0);
+    }
+
+    // Build graph and compute in-degrees
+    for &(x, y) in &relevant_rules {
+        graph.entry(x).or_default().push(y);
+        *in_degree.get_mut(&y).unwrap() += 1;
+    }
+
+    // Use a max-heap to select nodes with the highest page number
+    let mut heap = BinaryHeap::new();
+
+    // Add nodes with zero in-degree to the heap
+    for (&page, &deg) in &in_degree {
+        if deg == 0 {
+            heap.push(Reverse(page)); // Reverse to create a min-heap (since BinaryHeap is a max-heap)
+        }
+    }
+
+    // Perform topological sort
+    let mut sorted_pages = Vec::new();
+    while let Some(Reverse(page)) = heap.pop() {
+        sorted_pages.push(page);
+
+        if let Some(neighbors) = graph.get(&page) {
+            for &neighbor in neighbors {
+                let deg = in_degree.get_mut(&neighbor).unwrap();
+                *deg -= 1;
+                if *deg == 0 {
+                    heap.push(Reverse(neighbor));
+                }
+            }
+        }
+    }
+
+    // Check if we have a valid ordering
+    if sorted_pages.len() != pages_in_update.len() {
+        panic!("Cycle detected in the ordering rules!");
+    }
+
+    sorted_pages
+}
+
+pub fn solve(input: String) {
     let (ordering_rules, updates) = parse_input(&input);
 
-    let mut total = 0;
-    let mut correct_updates = Vec::new();
+    let mut total_corrected = 0;
+    let mut incorrect_updates = Vec::new();
 
-    for update in updates {
-        if is_update_correct(&ordering_rules, &update) {
-            let middle_page = middle_page_number(&update);
-            total += middle_page;
-            correct_updates.push((update, middle_page));
+    for update in &updates {
+        if !is_update_correct(&ordering_rules, update) {
+            // Incorrectly ordered update, correct it
+            let corrected_update = correct_update(&ordering_rules, update);
+            let middle_page = middle_page_number(&corrected_update);
+            total_corrected += middle_page;
+            incorrect_updates.push((corrected_update, middle_page));
         }
     }
 
     // Output the result
-    println!("Total sum of middle page numbers: {}", total);
+    println!(
+        "Total sum of middle page numbers after correcting updates: {}",
+        total_corrected
+    );
 }
 
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    
-    #[test]
-    fn test_provided() {
-        let input = "\
+pub fn test() {
+    let input = "\
 47|53
 97|13
 97|61
@@ -120,7 +180,5 @@ mod tests {
 61,13,29
 97,13,75,29,47";
 
-        solve(input.to_string());
-    }
-
+    solve(input.to_string());
 }
