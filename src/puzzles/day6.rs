@@ -39,31 +39,18 @@ fn parse_map(input: &String) -> (Vec<Vec<Point>>, usize, usize, usize) {
     let mut guard_x: usize = 0;
     let mut guard_y: usize = 0;
     let mut direction: usize = 0; // 0=North, 1=East, 2=South, 3=West
-
+    let guard_direction = ['^','>','v','<'];
     for (y, line) in lines.iter().enumerate() {
         let mut row = Vec::new();
         for (x, ch) in line.chars().enumerate() {
             let mut p = Point { value: ch, visited: false };
             // Identify guard
-            if ch == '^' {
+            let d = guard_direction.iter().enumerate().find(|(_,x)| **x == ch).map(|(dir,_)|dir);
+            if (d.is_some()) {
+                direction = d.unwrap();
                 guard_x = x;
                 guard_y = y;
                 direction = 0; // Facing North
-                p.value = '.'; // Replace guard symbol with floor
-            } else if ch == '>' {
-                guard_x = x;
-                guard_y = y;
-                direction = 1; // Facing East
-                p.value = '.';
-            } else if ch == 'v' {
-                guard_x = x;
-                guard_y = y;
-                direction = 2; // Facing South
-                p.value = '.';
-            } else if ch == '<' {
-                guard_x = x;
-                guard_y = y;
-                direction = 3; // Facing West
                 p.value = '.';
             }
             row.push(p);
