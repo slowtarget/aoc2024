@@ -1,6 +1,5 @@
 use std::collections::{HashMap, HashSet, BinaryHeap};
 use std::cmp::Reverse;
-use std::fs;
 
 // Function to parse the ordering rules and updates from the input string
 fn parse_input(input: &str) -> (HashSet<(u32, u32)>, Vec<Vec<u32>>) {
