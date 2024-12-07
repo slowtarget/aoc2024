@@ -13,14 +13,12 @@ pub(crate) fn solve(input: String) -> (u32, u32) {
     let mut grid: Vec<Vec<Point>> = Vec::new();
 
     // Parse the input into a 2D grid of Points
-    for (y, line) in input.lines().enumerate() {
+    for (_y, line) in input.lines().enumerate() {
         let (_, chars) = parse_line(line).expect("Failed to parse line");
         let mut row = Vec::new();
-        for (x, &ch) in chars.iter().enumerate() {
+        for (_x, &ch) in chars.iter().enumerate() {
             row.push(Point {
                 value: ch,
-                x,
-                y,
                 neighbours: Vec::new(),
             });
         }
@@ -69,8 +67,6 @@ pub(crate) fn solve(input: String) -> (u32, u32) {
 
 struct Point {
     value: char,
-    x: usize,
-    y: usize,
     neighbours: Vec<Option<(usize, usize)>>, // Fixed order of neighbors
 }
 
@@ -332,5 +328,4 @@ MMM";
             assert_eq!(part2, 0);
         }
     }
-
 }

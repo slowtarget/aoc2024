@@ -125,7 +125,7 @@ fn correct_update(ordering_rules: &HashSet<(u32, u32)>, update: &Vec<u32>) -> Ve
     sorted_pages
 }
 
-pub fn solve(input: String) {
+pub fn solve(input: String) -> u32 {
     let (ordering_rules, updates) = parse_input(&input);
 
     let mut total_corrected = 0;
@@ -146,10 +146,17 @@ pub fn solve(input: String) {
         "Total sum of middle page numbers after correcting updates: {}",
         total_corrected
     );
+    total_corrected
 }
 
-pub fn test() {
-    let input = "\
+#[cfg(test)]
+mod tests {
+    use super::*;
+    
+    #[test]
+    fn provided() {
+
+        let input = "\
 47|53
 97|13
 97|61
@@ -179,5 +186,6 @@ pub fn test() {
 61,13,29
 97,13,75,29,47";
 
-    solve(input.to_string());
+        assert_eq!(solve(input.to_string()),123);
+    }
 }
