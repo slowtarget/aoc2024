@@ -1,18 +1,4 @@
-use nom::{
-    IResult,
-    character::complete::{digit1, space1},
-    combinator::map_res,
-    multi::separated_list1,
-};
-
-fn parse_number(input: &str) -> IResult<&str, i32> {
-    map_res(digit1, |digit_str: &str| digit_str.parse::<i32>())(input)
-}
-fn parse_line(input: &str) -> IResult<&str, Vec<i32>> {
-    separated_list1(space1, parse_number)(input)
-}
-
-use std::io::{self, BufRead};
+use std::time::Instant;
 
 #[derive(Clone)]
 struct Point {
@@ -21,19 +7,19 @@ struct Point {
 }
 
 pub(crate) fn solve(input: String) {
+    let start = Instant::now();
+    
     let (grid, guard_x, guard_y, direction) = parse_map(&input);
-    let part1_result = part1_simulation(&mut grid.clone(), guard_x, guard_y, direction);
-    let part2_result = part2(&input);
+    let ( part1_result, grid) = part1_simulation( grid, guard_x, guard_y, direction);
+    let part2_result = part2(grid, guard_x, guard_y, direction);
+    let duration = start.elapsed();
+    println!("Execution time: {} microseconds", duration.as_micros());
 
     println!("part1: {}, part2: {}", part1_result, part2_result);
 }
 
 fn parse_map(input: &String) -> (Vec<Vec<Point>>, usize, usize, usize) {
     let lines: Vec<String> = input.lines().map(|l| l.to_string()).collect();
-
-    // Parse the map into a 2D grid of Points
-    let height = lines.len();
-    let width = lines.iter().map(|l| l.len()).max().unwrap_or(0);
 
     let mut grid: Vec<Vec<Point>> = Vec::new();
     let mut guard_x: usize = 0;
@@ -46,11 +32,10 @@ fn parse_map(input: &String) -> (Vec<Vec<Point>>, usize, usize, usize) {
             let mut p = Point { value: ch, visited: false };
             // Identify guard
             let d = guard_direction.iter().enumerate().find(|(_,x)| **x == ch).map(|(dir,_)|dir);
-            if (d.is_some()) {
+            if d.is_some() {
                 direction = d.unwrap();
                 guard_x = x;
                 guard_y = y;
-                direction = 0; // Facing North
                 p.value = '.';
             }
             row.push(p);
@@ -62,7 +47,7 @@ fn parse_map(input: &String) -> (Vec<Vec<Point>>, usize, usize, usize) {
     (grid, guard_x, guard_y, direction)
 }
 
-fn part1_simulation(grid: &mut Vec<Vec<Point>>, guard_x: usize, guard_y: usize, direction: usize) -> i32 {
+fn part1_simulation(mut grid: Vec<Vec<Point>>, guard_x: usize, guard_y: usize, direction: usize) -> (i32,Vec<Vec<Point>>) {
     let height = grid.len();
     let width = if height > 0 { grid[0].len() } else {0};
     let mut guard_x = guard_x;
@@ -108,25 +93,30 @@ fn part1_simulation(grid: &mut Vec<Vec<Point>>, guard_x: usize, guard_y: usize, 
             }
         }
     }
-    count
+    (count, grid)
 }
 
-fn part2(input: &String) -> i32 {
-    let (mut original_grid, guard_x, guard_y, guard_dir) = parse_map(input);
+fn part2(mut original_grid:Vec<Vec<Point>>, guard_x: usize, guard_y: usize, guard_dir:usize) -> i32 {
 
     // We want to find how many positions cause a loop if we place an obstruction there.
     // The new obstruction can't be placed at the guard's starting position.
+
+
+    //The new obstruction will only make an impact if placed somewhere on the original route
     let height = original_grid.len();
     let width = if height == 0 {0} else {original_grid[0].len()};
 
     let mut count = 0;
 
-    // We'll consider placing '#' on any cell that is '.' and not the start cell.
+    // We'll consider placing '#' on any cell that is '.' and not the start cell and has been visited
     // After placing it, we run causes_loop and see if we get a loop.
     for y in 0..height {
         for x in 0..width {
             // Can't place at start position
             if x == guard_x && y == guard_y {
+                continue;
+            }
+            if !original_grid[y][x].visited {
                 continue;
             }
             if original_grid[y][x].value == '.' {
@@ -226,8 +216,8 @@ mod tests {
 #.........
 ......#...";
         let (grid, gx, gy, d) = parse_map(&input.to_string());
-        let mut grid_clone = grid.clone();
-        assert_eq!(part1_simulation(&mut grid_clone, gx, gy, d), 41);
+        let (part1,_) = part1_simulation(grid, gx, gy, d);
+        assert_eq!(part1, 41);
     }
 
     #[test]
@@ -243,7 +233,7 @@ mod tests {
 #.........
 ......#...";
         let (grid, gx, gy, d) = parse_map(&input.to_string());
-        let mut grid_clone = grid.clone();
-        assert_eq!(part2(&input.to_string()), 6);
+        let (_, grid) = part1_simulation(grid, gx, gy, d);
+        assert_eq!(part2(grid,gx, gy, d), 6);
     }
 }
