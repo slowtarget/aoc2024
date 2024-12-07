@@ -10,7 +10,7 @@ pub(crate) fn solve(input: String) {
     let start = Instant::now();
     
     let (grid, guard_x, guard_y, direction) = parse_map(&input);
-    let ( part1_result, grid) = part1_simulation( grid, guard_x, guard_y, direction);
+    let ( part1_result, grid) = part1(grid, guard_x, guard_y, direction);
     let part2_result = part2(grid, guard_x, guard_y, direction);
     let duration = start.elapsed();
     println!("Execution time: {} microseconds", duration.as_micros());
@@ -43,11 +43,10 @@ fn parse_map(input: &String) -> (Vec<Vec<Point>>, usize, usize, usize) {
 
         grid.push(row);
     }
-
     (grid, guard_x, guard_y, direction)
 }
 
-fn part1_simulation(mut grid: Vec<Vec<Point>>, guard_x: usize, guard_y: usize, direction: usize) -> (i32,Vec<Vec<Point>>) {
+fn part1(mut grid: Vec<Vec<Point>>, guard_x: usize, guard_y: usize, direction: usize) -> (i32, Vec<Vec<Point>>) {
     let height = grid.len();
     let width = if height > 0 { grid[0].len() } else {0};
     let mut guard_x = guard_x;
@@ -71,9 +70,8 @@ fn part1_simulation(mut grid: Vec<Vec<Point>>, guard_x: usize, guard_y: usize, d
         }
         let nxu = nx as usize;
         let nyu = ny as usize;
-        let blocked = grid[nyu][nxu].value == '#';
 
-        if blocked {
+        if grid[nyu][nxu].value == '#' {
             // Turn right
             direction = (direction + 1) % 4;
         } else {
@@ -100,7 +98,6 @@ fn part2(mut original_grid:Vec<Vec<Point>>, guard_x: usize, guard_y: usize, guar
 
     // We want to find how many positions cause a loop if we place an obstruction there.
     // The new obstruction can't be placed at the guard's starting position.
-
 
     //The new obstruction will only make an impact if placed somewhere on the original route
     let height = original_grid.len();
@@ -136,14 +133,14 @@ fn part2(mut original_grid:Vec<Vec<Point>>, guard_x: usize, guard_y: usize, guar
     count
 }
 
-fn causes_loop(grid: &Vec<Vec<Point>>, start_x: usize, start_y: usize, start_dir: usize) -> bool {
+fn causes_loop(grid: &[Vec<Point>], start_x: usize, start_y: usize, start_dir: usize) -> bool {
     let height = grid.len();
     if height == 0 { return false; }
     let width = grid[0].len();
 
     // We'll track visited states as visited_states[y][x][dir]
     // If we ever revisit the same state, we have a loop.
-    let mut visited_states = vec![vec![vec![false;4];width];height];
+    let mut visited_states = vec![false;4*width*height];
 
     let mut x = start_x;
     let mut y = start_y;
@@ -153,7 +150,7 @@ fn causes_loop(grid: &Vec<Vec<Point>>, start_x: usize, start_y: usize, start_dir
     let deltas = [(0isize, -1isize), (1,0), (0,1), (-1,0)];
 
     // Mark the initial state as visited
-    visited_states[y][x][dir] = true;
+    visited_states[y*width*4+x*4+dir] = true;
 
     loop {
         let (dx, dy) = deltas[dir];
@@ -173,11 +170,11 @@ fn causes_loop(grid: &Vec<Vec<Point>>, start_x: usize, start_y: usize, start_dir
             // Turn right
             let new_dir = (dir + 1) % 4;
             // We haven't moved, just turned. Check if this state was visited:
-            if visited_states[y][x][new_dir] {
+            if visited_states[y*width*4+x*4+new_dir] {
                 // Loop detected
                 return true;
             }
-            visited_states[y][x][new_dir] = true;
+            visited_states[y*width*4+x*4+new_dir] = true;
             dir = new_dir;
         } else {
             // Move forward
@@ -185,12 +182,12 @@ fn causes_loop(grid: &Vec<Vec<Point>>, start_x: usize, start_y: usize, start_dir
             let new_y = nyu;
             let new_dir = dir;
 
-            if visited_states[new_y][new_x][new_dir] {
+            if visited_states[new_y*width*4+new_x*4+new_dir] {
                 // Loop detected
                 return true;
             }
 
-            visited_states[new_y][new_x][new_dir] = true;
+            visited_states[new_y*width*4+new_x*4+new_dir] = true;
 
             x = new_x;
             y = new_y;
@@ -216,7 +213,7 @@ mod tests {
 #.........
 ......#...";
         let (grid, gx, gy, d) = parse_map(&input.to_string());
-        let (part1,_) = part1_simulation(grid, gx, gy, d);
+        let (part1,_) = part1(grid, gx, gy, d);
         assert_eq!(part1, 41);
     }
 
@@ -233,7 +230,7 @@ mod tests {
 #.........
 ......#...";
         let (grid, gx, gy, d) = parse_map(&input.to_string());
-        let (_, grid) = part1_simulation(grid, gx, gy, d);
+        let (_, grid) = part1(grid, gx, gy, d);
         assert_eq!(part2(grid,gx, gy, d), 6);
     }
 }
