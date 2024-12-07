@@ -88,17 +88,13 @@ fn can_make_target_with_concatenation(target: i64, nums: &[i64]) -> bool {
         let last = nums[nums.len() - 1];
 
         // Case 1: Try addition
-        if target >= last {
-            if recurse(target - last, &nums[..nums.len() - 1]) {
-                return true;
-            }
+        if target >= last && recurse(target - last, &nums[..nums.len() - 1]) {
+            return true;
         }
 
         // Case 2: Try multiplication
-        if last != 0 && target % last == 0 {
-            if recurse(target / last, &nums[..nums.len() - 1]) {
-                return true;
-            }
+        if last != 0 && target % last == 0 && recurse(target / last, &nums[..nums.len() - 1]) {
+            return true;
         }
 
         // Case 3: Try concatenation
@@ -125,166 +121,6 @@ fn part2(data: &[(i64, Vec<i64>)]) -> i64 {
         .sum()
 }
 
-fn part2_old(data: &[(i64, Vec<i64>)]) -> i64 {
-    data.iter()
-        .enumerate() // Add line numbers
-        .filter(|(line_no, (target, nums))| {
-            // Generate all possible partitions (concatenation choices)
-            let partitions = generate_partitions(nums);
-
-            for partition in partitions {
-                // Generate all operator combinations for this partition
-                let operator_combinations = generate_operator_combinations(partition.len());
-
-                for operators in operator_combinations {
-                    let result = evaluate_with_ops(&partition, &operators);
-                    if result == *target {
-                        // Print the line number, successful partition, and operators
-                        if operators.contains(&"||") {
-                            println!(
-                                "({line}, vec!{:?}, vec!{:?}, {}),",
-                                partition, operators, result, line = line_no + 1
-                            );
-                        }
-
-                        return true; // Found a valid combination
-                    }
-                }
-            }
-            false // No combination matched the target
-        })
-        .map(|(_, (target, _))| target)
-        .sum()
-}
-// A simple helper function to generate all operator combinations for a given length of nums
-fn generate_operator_combinations(n: usize) -> Vec<Vec<&'static str>> {
-    if n < 2 {
-        return vec![];
-    }
-
-    // Define a static array of operators with 'static lifetime
-    let ops: [&'static str; 3] = ["+", "*", "||"];
-    let mut results = Vec::new();
-    let slots = n - 1;
-
-    fn backtrack(
-        ops: &[&'static str],
-        slots: usize,
-        current: &mut Vec<&'static str>,
-        results: &mut Vec<Vec<&'static str>>
-    ) {
-        if current.len() == slots {
-            results.push(current.clone());
-            return;
-        }
-        for &op in ops {
-            current.push(op);
-            backtrack(ops, slots, current, results);
-            current.pop();
-        }
-    }
-
-    backtrack(&ops, slots, &mut Vec::new(), &mut results);
-    results
-}
-fn evaluate_with_ops(nums: &[i64], ops: &[&str]) -> i64 {
-    assert_eq!(nums.len(), ops.len() + 1, "Number of ops should be one less than number of nums");
-
-    // Start with the first number as the initial result
-    let mut result = nums[0];
-
-    // Apply each operator in order
-    for i in 0..ops.len() {
-        let op = ops[i];
-        let next_num = nums[i + 1];
-        result = match op {
-            "+" => result + next_num,
-            "*" => result * next_num,
-            "||" => {
-                let concat_str = format!("{}{}", result, next_num);
-                concat_str.parse::<i64>().expect("Failed to parse concatenated value")
-            }
-            _ => panic!("Unknown operator: {}", op),
-        };
-    }
-
-    result
-}
-
-fn concat_numbers(nums: &[i64]) -> i64 {
-    let mut val_str = String::new();
-    for n in nums {
-        val_str.push_str(&n.to_string());
-    }
-    val_str.parse::<i64>().unwrap()
-}
-
-// Generate all ways to partition nums into concatenated chunks
-// For nums = [a,b,c], partitions might be:
-// [[a,b,c]] (all concatenated)
-// [[a,b], [c]]
-// [[a], [b,c]]
-// [[a], [b], [c]]
-fn generate_partitions(nums: &[i64]) -> Vec<Vec<i64>> {
-    fn backtrack(nums: &[i64], start: usize, current: &mut Vec<i64>, result: &mut Vec<Vec<i64>>) {
-        let n = nums.len();
-        if start == n {
-            result.push(current.clone());
-            return;
-        }
-
-        // Try concatenating with following elements
-        for end in start..n {
-            let val = concat_numbers(&nums[start..=end]);
-            current.push(val);
-            backtrack(nums, end+1, current, result);
-            current.pop();
-        }
-    }
-
-    let mut result = Vec::new();
-    let mut current = Vec::new();
-    backtrack(nums, 0, &mut current, &mut result);
-    result
-}
-
-// Evaluate a sequence of numbers with a chosen pattern of + and *, left-to-right
-fn all_arithmetic_results(nums: &[i64]) -> Vec<i64> {
-    fn backtrack(nums: &[i64], idx: usize, current_val: i64, results: &mut Vec<i64>) {
-        if idx == nums.len() {
-            results.push(current_val);
-            return;
-        }
-        let next_num = nums[idx];
-        // Try addition
-        backtrack(nums, idx+1, current_val + next_num, results);
-        // Try multiplication
-        backtrack(nums, idx+1, current_val * next_num, results);
-    }
-
-    if nums.len() == 1 {
-        return vec![nums[0]];
-    }
-    let mut results = Vec::new();
-    // First number is the starting current_val
-    backtrack(nums, 1, nums[0], &mut results);
-    results
-}
-
-fn can_make_target_part2(target: i64, nums: &[i64]) -> bool {
-    if nums.len() == 1 {
-        return nums[0] == target;
-    }
-    let partitions = generate_partitions(nums);
-    for part in partitions {
-        let vals = all_arithmetic_results(&part);
-        if vals.contains(&target) {
-            return true;
-        }
-    }
-    false
-}
-
 pub fn solve(input: String) {
     let start = Instant::now();
     let (_, data) = parse_input(&input).unwrap();
@@ -294,16 +130,14 @@ pub fn solve(input: String) {
     let ans_part2 = part2(&data);
     let solve_duration = start_solve.elapsed();
     println!("Part1: {}", ans_part1);
-    println!("Part2: {}", ans_part2); // 96779702356183 was too high
-    //                                   96779702119491
-    println!("Parsing took: {}ms", parse_duration.as_millis());
-    println!("Solving took: {}ms", solve_duration.as_millis());
+    println!("Part2: {}", ans_part2); 
+    println!("Parsing took: {} microseconds", parse_duration.as_micros());
+    println!("Solving took: {} microseconds", solve_duration.as_micros());
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    #[test]
     #[test]
     fn test_can_make_target_with_concatenation() {
         // 6 * 8 = 48, 48 || 6 = 486, 486 * 15 = 7290
@@ -324,8 +158,8 @@ mod tests {
         // Invalid case
         assert!(!can_make_target_with_concatenation(999, &[10, 20, 30])); // No way to make 999
     }
-    mod discrepancies {
-        use crate::puzzles::day7::{can_make_target_with_concatenation, evaluate_with_ops};
+    mod check_part2 {
+        use crate::puzzles::day7::{can_make_target_with_concatenation};
 
         fn get_test_cases() -> Vec<(i32, Vec<i64>, Vec<&'static str>, i64)> { vec![
         (7, vec![577, 48, 1, 160, 20, 923, 2], vec!["||", "*", "*", "+", "||", "*"], 18479401846),
@@ -457,162 +291,18 @@ mod tests {
 
         #[test]
         fn verify_successful_sequences() {
-            let mut discrepancies = Vec::new();
             let vec = get_test_cases();
             for (line, nums, ops, expected_result) in vec {
-                let computed_with_ops = evaluate_with_ops(&nums, &ops);
                 let valid_with_can_make = can_make_target_with_concatenation(expected_result, &nums);
-                // Check for discrepancies
-                if !valid_with_can_make {
-                    discrepancies.push((
-                        line,
-                        nums.clone(),
-                        ops.clone(),
-                        expected_result,
-                        computed_with_ops,
-                        valid_with_can_make,
-                    ));
-                }
-                println!(
-                    "Line {}: nums = {:?}, ops = {:?}, expected = {}, computed = {}, valid_with_can_make = {}",
-                    line, nums, ops, expected_result, computed_with_ops, valid_with_can_make
+                assert!(
+                    valid_with_can_make,
+                    "Line {}: nums = {:?}, ops = {:?}, expected = {}, valid_with_can_make = {}",
+                    line, nums, ops, expected_result, valid_with_can_make
                 );
-                assert_eq!(
-                    computed_with_ops, expected_result,
-                    "Line {}: nums = {:?}, ops = {:?}, expected = {}, computed = {}",
-                    line, nums, ops, expected_result, computed_with_ops
-                );
-                assert_eq!(
-                    valid_with_can_make, true,
-                    "Line {}: nums = {:?}, ops = {:?}, expected = {}, computed = {}, valid_with_can_make = {}",
-                    line, nums, ops, expected_result, computed_with_ops, valid_with_can_make
-                );
-
             }
-            if !discrepancies.is_empty() {
-                println!("Discrepancies found:");
-                for (line, nums, ops, expected, computed, valid) in &discrepancies {
-                    println!(
-                        "Line {}: nums = {:?}, ops = {:?}, expected = {}, computed = {}, valid_with_can_make = {}",
-                        line, nums, ops, expected, computed, valid
-                    );
-                }
-            }
-
-            assert!(
-                discrepancies.is_empty(),
-                "Discrepancies found between evaluate_with_ops and can_make_target_with_concatenation!"
-            );
         }
     }
 
-
-    #[test]
-    fn test_direct_operator_combination_for_7290() {
-        // We know from the puzzle:
-        // 6 * 8 = 48
-        // 48 || 6 = 486
-        // 486 * 15 = 7290
-        let nums = [6,8,6,15];
-        let ops = ["*", "||", "*"];
-
-        let result = evaluate_with_ops(&nums, &ops);
-        assert_eq!(result, 7290, "Evaluating 6 * 8 || 6 * 15 should give 7290");
-    }
-    #[test]
-    fn test_operator_combinations_include_star_pipe_star() {
-        let nums = [6,8,6,15];
-
-        // Generate all combinations of operators for nums, assuming we have a function:
-        // generate_operator_combinations(nums_len: usize) -> Vec<Vec<&'static str>>
-        // That returns something like [["+", "+", "+"], ["+", "+", "*"], ... , ["*", "||", "*"], ...]
-        // We'll need to implement this test helper.
-
-        let combos = generate_operator_combinations(nums.len());
-        // We look for ["*", "||", "*"]
-        let target = vec!["*", "||", "*"];
-        assert!(combos.contains(&target), "Should contain combination * || * for the given nums");
-    }
-
-
-
-
-    // A helper function to evaluate a sequence of numbers with a specified sequence of operators.
-    // Operators and numbers are applied left-to-right:
-    // Example: nums = [6,8,6,15], ops = ['*', '||', '*']
-    // Step 1: 6 * 8 = 48
-    // Step 2: 48 || 6 = 486
-    // Step 3: 486 * 15 = 7290
-    fn evaluate_sequence(nums: &[i64], ops: &[char]) -> (Vec<i64>, i64) {
-        let mut steps = Vec::new();
-        let mut result = nums[0];
-        steps.push(result);
-        for (i, &op) in ops.iter().enumerate() {
-            let next_val = nums[i+1];
-            result = match op {
-                '+' => result + next_val,
-                '*' => result * next_val,
-                '|' => {
-                    // Since '||' is represented by a single '|', we handle concatenation:
-                    // We'll assume ops are well-formed: two '|' in a row means concatenation operator.
-                    // This test just uses a single '|' char to represent the concatenation step for simplicity.
-                    let concat_str = format!("{}{}", result, next_val);
-                    concat_str.parse::<i64>().unwrap()
-                },
-                _ => panic!("Unknown operator: {}", op),
-            };
-            steps.push(result);
-        }
-        (steps, result)
-    }
-
-    // Test that breaks down the sequence for achieving 7290 from [6,8,6,15]
-    // The correct known sequence is: 6 * 8 || 6 * 15
-    // We'll represent '||' as a single '|' character for simplicity in this test.
-    #[test]
-    fn test_intermediate_steps_for_7290() {
-        let nums = [6, 8, 6, 15];
-        let ops = ['*', '|', '*']; // representing '*', '||', '*'
-
-        let (steps, final_val) = evaluate_sequence(&nums, &ops);
-
-        // steps will hold intermediate results after each operation
-        // steps[0] = initial value (6)
-        // steps[1] = after 6 * 8 = 48
-        // steps[2] = after 48 || 6 = 486
-        // steps[3] = after 486 * 15 = 7290
-
-        assert_eq!(steps[0], 6, "Initial value should be the first number");
-        assert_eq!(steps[1], 48, "After 6 * 8 we should get 48");
-        assert_eq!(steps[2], 486, "After 48 || 6 we should get 486");
-        assert_eq!(steps[3], 7290, "After 486 * 15 we should get 7290");
-        assert_eq!(final_val, 7290, "Final result should be 7290");
-    }
-
-    // Additional test to ensure the evaluate_sequence helper works for a simpler case:
-    #[test]
-    fn test_intermediate_steps_simple_concat() {
-        // For example: 15 || 6 = 156
-        let nums = [15, 6];
-        let ops = ['|']; // representing '||'
-        let (steps, final_val) = evaluate_sequence(&nums, &ops);
-
-        assert_eq!(steps[0], 15);
-        assert_eq!(steps[1], 156, "15 || 6 should give 156");
-        assert_eq!(final_val, 156);
-    }
-
-    #[test]
-    fn test_intermediate_steps_simple_mix() {
-        // For example: 10 * 19 = 190 (no concatenation)
-        let nums = [10, 19];
-        let ops = ['*'];
-        let (steps, final_val) = evaluate_sequence(&nums, &ops);
-
-        assert_eq!(steps[0], 10);
-        assert_eq!(steps[1], 190, "10 * 19 = 190");
-        assert_eq!(final_val, 190);
-    }
     #[test]
     fn parse_test() {
         let input = "190: 10 19\n3267: 81 40 27\n";
@@ -658,12 +348,8 @@ mod tests {
         // 48 || 6 = 486
         // 486 * 15 = 7290
         //
-        // The old logic likely won't find 7290 for this input.
-        // After implementing the two-step approach (first choosing concatenations,
-        // then applying arithmetic), this should pass.
         let data = vec![(7290, vec![6, 8, 6, 15])];
-        let ans = part2(&data);
-        assert_eq!(ans, 7290, "The old logic should fail here; the new logic should pass.");
+        assert_eq!(part2(&data), 7290);
     }
     #[test]
     fn part2_test_simple() {
@@ -714,11 +400,9 @@ mod tests {
     fn test_concatenation_only() {
         // Only concatenation makes sense:
         // 123: 1 2 3 -> 1||2||3 = 123
-        let data = vec![
+        assert_eq!(part2(&vec![
             (123, vec![1, 2, 3])
-        ];
-        let ans = part2(&data);
-        assert_eq!(ans, 123);
+        ]), 123);
     }
 
     // Test concatenation + addition:
@@ -766,4 +450,3 @@ mod tests {
         assert_eq!(ans, 1234);
     }
 }
-
