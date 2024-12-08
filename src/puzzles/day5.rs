@@ -1,191 +1,110 @@
-use std::collections::{HashMap, HashSet, BinaryHeap};
-use std::cmp::Reverse;
+use nom::{
+    bytes::complete::tag,
+    character::complete::{digit1, line_ending},
+    combinator::{map_res, opt},
+    multi::{many1, separated_list1},
+    sequence::separated_pair,
+    IResult,
+};
+use std::collections::{HashMap, HashSet};
 
-// Function to parse the ordering rules and updates from the input string
-fn parse_input(input: &str) -> (HashSet<(u32, u32)>, Vec<Vec<u32>>) {
-    let mut lines = input.lines();
-
-    // Read ordering rules until an empty line is encountered
-    let mut ordering_rules = HashSet::new();
-    for line in &mut lines {
-        let line = line.trim();
-        if line.is_empty() {
-            break;
-        }
-        let parts: Vec<&str> = line.split('|').collect();
-        if parts.len() == 2 {
-            let x = parts[0].parse::<u32>().unwrap();
-            let y = parts[1].parse::<u32>().unwrap();
-            ordering_rules.insert((x, y));
-        }
-    }
-
-    // Read updates
-    let mut updates = Vec::new();
-    for line in &mut lines {
-        let line = line.trim();
-        if line.is_empty() {
-            continue;
-        }
-        let pages: Vec<u32> = line
-            .split(',')
-            .map(|s| s.trim().parse::<u32>().unwrap())
-            .collect();
-        updates.push(pages);
-    }
-
-    (ordering_rules, updates)
+fn parse_rule(input: &str) -> IResult<&str, (u32, u32)> {
+    let (input, (a, b)) = separated_pair(parse_number, tag("|"), parse_number)(input)?;
+    Ok((input, (a, b)))
 }
 
-// Function to check if an update is in correct order
-fn is_update_correct(ordering_rules: &HashSet<(u32, u32)>, update: &Vec<u32>) -> bool {
-    // Create a map from page number to its position in the update
-    let mut position_map = HashMap::new();
-    for (index, &page) in update.iter().enumerate() {
-        position_map.insert(page, index);
-    }
+fn parse_number(input: &str) -> IResult<&str, u32> {
+    map_res(digit1, |s: &str| s.parse::<u32>())(input)
+}
 
-    // For each ordering rule, check if it is violated in the update
-    for &(x, y) in ordering_rules {
-        if let (Some(&pos_x), Some(&pos_y)) = (position_map.get(&x), position_map.get(&y)) {
-            if pos_x >= pos_y {
-                // Rule violated
+fn parse_rules(input: &str) -> IResult<&str, Vec<(u32, u32)>> {
+    separated_list1(line_ending, parse_rule)(input)
+}
+
+fn parse_update(input: &str) -> IResult<&str, Vec<u32>> {
+    separated_list1(tag(","), parse_number)(input)
+}
+
+fn parse_updates(input: &str) -> IResult<&str, Vec<Vec<u32>>> {
+    separated_list1(line_ending, parse_update)(input)
+}
+
+fn parse_input(input: &str) -> IResult<&str, (Vec<(u32, u32)>, Vec<Vec<u32>>)> {
+    let (input, rules) = parse_rules(input)?;
+    let (input, _) = line_ending(input)?;
+    let (input, updates) = parse_updates(input)?;
+    Ok((input, (rules, updates)))
+}
+
+fn is_valid_update(rules: &[(u32, u32)], update: &[u32]) -> bool {
+    let index_map: HashMap<u32, usize> = update
+        .iter()
+        .enumerate()
+        .map(|(i, &page)| (page, i))
+        .collect();
+
+    for &(before, after) in rules {
+        if let (Some(&before_index), Some(&after_index)) = (index_map.get(&before), index_map.get(&after)) {
+            if before_index > after_index {
                 return false;
             }
         }
     }
-
-    // All rules satisfied
     true
 }
 
-// Function to find the middle page number of an update
-fn middle_page_number(update: &Vec<u32>) -> u32 {
-    let len = update.len();
-    update[len / 2]
+fn middle_page(update: &[u32]) -> u32 {
+    let mid_index = update.len() / 2;
+    update[mid_index]
 }
 
-// Function to correct an update according to the ordering rules
-fn correct_update(ordering_rules: &HashSet<(u32, u32)>, update: &Vec<u32>) -> Vec<u32> {
-    // Extract relevant ordering rules
-    let pages_in_update: HashSet<u32> = update.iter().cloned().collect();
-    let mut relevant_rules = Vec::new();
-    for &(x, y) in ordering_rules {
-        if pages_in_update.contains(&x) && pages_in_update.contains(&y) {
-            relevant_rules.push((x, y));
-        }
-    }
+fn part1(input: &str) -> u32 {
+    let (_, (rules, updates)) = parse_input(input).unwrap();
 
-    // Build the dependency graph
-    let mut graph: HashMap<u32, Vec<u32>> = HashMap::new(); // Adjacency list
-    let mut in_degree: HashMap<u32, usize> = HashMap::new(); // Incoming edge counts
-
-    // Initialize in_degree for all pages in the update
-    for &page in &pages_in_update {
-        in_degree.insert(page, 0);
-    }
-
-    // Build graph and compute in-degrees
-    for &(x, y) in &relevant_rules {
-        graph.entry(x).or_default().push(y);
-        *in_degree.get_mut(&y).unwrap() += 1;
-    }
-
-    // Use a max-heap to select nodes with the highest page number
-    let mut heap = BinaryHeap::new();
-
-    // Add nodes with zero in-degree to the heap
-    for (&page, &deg) in &in_degree {
-        if deg == 0 {
-            heap.push(Reverse(page)); // Reverse to create a min-heap (since BinaryHeap is a max-heap)
-        }
-    }
-
-    // Perform topological sort
-    let mut sorted_pages = Vec::new();
-    while let Some(Reverse(page)) = heap.pop() {
-        sorted_pages.push(page);
-
-        if let Some(neighbors) = graph.get(&page) {
-            for &neighbor in neighbors {
-                let deg = in_degree.get_mut(&neighbor).unwrap();
-                *deg -= 1;
-                if *deg == 0 {
-                    heap.push(Reverse(neighbor));
-                }
-            }
-        }
-    }
-
-    // Check if we have a valid ordering
-    if sorted_pages.len() != pages_in_update.len() {
-        panic!("Cycle detected in the ordering rules!");
-    }
-
-    sorted_pages
+    updates
+        .iter()
+        .filter(|update| is_valid_update(&rules, update))
+        .map(|update| middle_page(update))
+        .sum()
 }
 
-pub fn solve(input: String) -> u32 {
-    let (ordering_rules, updates) = parse_input(&input);
-
-    let mut total_corrected = 0;
-    let mut incorrect_updates = Vec::new();
-
-    for update in &updates {
-        if !is_update_correct(&ordering_rules, update) {
-            // Incorrectly ordered update, correct it
-            let corrected_update = correct_update(&ordering_rules, update);
-            let middle_page = middle_page_number(&corrected_update);
-            total_corrected += middle_page;
-            incorrect_updates.push((corrected_update, middle_page));
-        }
-    }
-
-    // Output the result
-    println!(
-        "Total sum of middle page numbers after correcting updates: {}",
-        total_corrected
-    );
-    total_corrected
+pub fn solve(input: String) {
+    let result = part1(&input);
+    println!("Sum of middle pages of valid updates: {}", result);
 }
-
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[test]
-    fn provided() {
+    fn test_parse_input() {
+        let input = "47|53\n97|13\n\n75,47,61,53,29\n97,61,53,29,13";
+        let (_, (rules, updates)) = parse_input(input).unwrap();
+        assert_eq!(rules, vec![(47, 53), (97, 13)]);
+        assert_eq!(updates, vec![
+            vec![75, 47, 61, 53, 29],
+            vec![97, 61, 53, 29, 13],
+        ]);
+    }
 
-        let input = "\
-47|53
-97|13
-97|61
-97|47
-75|29
-61|13
-75|53
-29|13
-97|29
-53|29
-61|53
-97|53
-61|29
-47|13
-75|47
-97|75
-47|61
-75|61
-47|29
-75|13
-53|13
+    #[test]
+    fn test_is_valid_update() {
+        let rules = vec![(47, 53), (75, 29)];
+        let update = vec![75, 47, 53, 29];
+        assert!(is_valid_update(&rules, &update));
+        let invalid_update = vec![75, 53, 47, 29];
+        assert!(!is_valid_update(&rules, &invalid_update));
+    }
 
-75,47,61,53,29
-97,61,53,29,13
-75,29,13
-75,97,47,61,53
-61,13,29
-97,13,75,29,47";
+    #[test]
+    fn test_middle_page() {
+        let update = vec![75, 47, 61, 53, 29];
+        assert_eq!(middle_page(&update), 61);
+    }
 
-        assert_eq!(solve(input.to_string()),123);
+    #[test]
+    fn test_part1() {
+        let input = "47|53\n97|13\n\n75,47,61,53,29\n97,61,53,29,13\n75,29,13\n";
+        assert_eq!(part1(input), 143);
     }
 }
