@@ -23,33 +23,23 @@ fn parse_digits(input: &str) -> Vec<usize> {
 }
 
 /// Chunk the digits array into an array of Partitions
-fn chunk(input: &[usize]) -> Vec<Partition> {
-    // Create an array of `Option<File>` with the first slot populated
-    input.chunks(2)
-        .enumerate()
-        .map(|(id, chunk)| {
+    fn chunk(input: &[usize]) -> Vec<Partition> {
+        let capacity = input.len() / 2; // Assuming each file has size + free space
+        let mut partitions = Vec::with_capacity(capacity);
+
+        input.chunks(2).enumerate().for_each(|(id, chunk)| {
             let size = chunk[0];
-            let free = if chunk.len() == 2 {
-                chunk[1]
-            } else {
-                0 // Default to 0 when chunk size is 1
-            };
+            let free = if chunk.len() == 2 { chunk[1] } else { 0 };
 
-            let file = File {
-                size,
-                id,
-            };
-
+            let file = File { size, id };
             let mut data: [Option<File>; 9] = Default::default();
             data[0] = Some(file);
 
-            Partition {
-                id,
-                data,
-                free,
-            }
-        })
-        .collect()
+            partitions.push(Partition { id, data, free });
+        });
+
+        partitions
+
 }
 fn compact_partitions(mut partitions: Vec<Partition>) -> Vec<Partition> {
     let mut last_free_of_size = [0; 9];
@@ -80,7 +70,7 @@ fn compact_partitions(mut partitions: Vec<Partition>) -> Vec<Partition> {
 
                             // Set the file.id in the original position to 0
                             if let Some(original_file) = partitions[i].data[0].as_mut() {
-                                original_file.id = 0; 
+                                original_file.id = 0;
                                 // 0 works it will not now accrue to the check sum, and this preserves the empty space in the correct position
                                 // there is a weird edge case where a small size file followed by a large space could have some other file moved into its free space, but then get moved itself.
                                 // so long as we set the id to 0, and then process the checksum normally, this won't be an issue.
@@ -157,7 +147,7 @@ fn calculate_checksum(disk: &[i32]) -> i64 {
 
 /// Solve function for parsing, compaction, and checksum calculation.
 pub fn solve(input: String) -> (i64, i64, i64) {
-    
+
     let start = Instant::now();
     let  digits = parse_digits(&input);
     let mut disk = populate_disk(&digits);
@@ -262,7 +252,7 @@ mod tests {
         fn simple() {
             let digits = vec![2, 3];
             let disk = create_disk(&digits);
-            assert_eq!(disk.len(), 5); 
+            assert_eq!(disk.len(), 5);
             assert!(disk.iter().all(|&x| x == -1));
         }
     }
@@ -277,10 +267,10 @@ mod tests {
             let disk = populate_disk(&digits);
             assert_eq!(
                 disk,
-                vec![0, 0, -1, -1, -1,    
-                     1, 1, 1, -1, -1, -1,   
-                     2, -1, -1,   
-                     3, -1, -1, -1, -1, 
+                vec![0, 0, -1, -1, -1,
+                     1, 1, 1, -1, -1, -1,
+                     2, -1, -1,
+                     3, -1, -1, -1, -1,
                      4,-1, -1, -1, -1,
                      5,-1, -1, -1,
                      6, -1, -1, -1, -1,
@@ -310,11 +300,11 @@ mod tests {
             compact_disk(&mut disk);
             assert_eq!(disk, vec![0, 2, 2, 1, 1, 1, 2, 2, 2, -1, -1, -1, -1, -1]);
         }
-        
+
     }
     mod chunk {
         use crate::puzzles::day9::{chunk, File, Partition};
-        
+
         #[test]
         fn simple() {
             let input = [1,2,3,4];
@@ -439,7 +429,7 @@ mod tests {
     mod compact_partitions {
         use super::*;
         #[cfg(test)]
-        
+
 
 
 
@@ -606,7 +596,7 @@ mod tests {
                 // The partitions are already compact
                 assert_eq!(result, partitions);
             }
-        
+
 
         #[test]
         fn weird() {
@@ -663,7 +653,7 @@ mod tests {
                         Some(File {
                             id: 0, // 1 was moved away
                             size: 1
-                        }), 
+                        }),
                         Some(File {
                             id: 2,
                             size: 5
@@ -755,7 +745,7 @@ mod tests {
             // Partition 1:
             // File 2 contributes: 2 * 2 + 2 * 3 = 10
             // File 3 contributes: 3 * 4 = 12
-            assert_eq!(calculate_checksum_from_partition(&input), 23);
+            assert_eq!(calculate_checksum_from_partition(&input), 58);
         }
 
         #[test]
@@ -787,7 +777,7 @@ mod tests {
             assert_eq!(calculate_checksum_from_partition(&input), 0);
         }
     }
-    
+
     mod calculate_checksum {
         use crate::puzzles::day9::calculate_checksum;
 
@@ -803,7 +793,7 @@ mod tests {
         #[test]
         fn simple() {
             let disk = vec![
-                0, 0, 1, 1, 1, 
+                0, 0, 1, 1, 1,
             ];
             let checksum = calculate_checksum(&disk);
             assert_eq!(checksum, 9); // 0 + 0 + 2 + 3 + 4
