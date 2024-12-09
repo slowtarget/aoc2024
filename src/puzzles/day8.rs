@@ -196,7 +196,7 @@ mod tests {
         }
     }
     mod part2 {
-        use crate::puzzles::day8::{part1, part2};
+        use crate::puzzles::day8::{part2};
 
         #[test]
         fn provided() {
