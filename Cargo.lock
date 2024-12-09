@@ -7,6 +7,7 @@ name = "aoc2024"
 version = "0.1.0"
 dependencies = [
  "nom",
+ "timing_util",
 ]
 
 [[package]]
@@ -30,3 +31,7 @@ dependencies = [
  "memchr",
  "minimal-lexical",
 ]
+
+[[package]]
+name = "timing_util"
+version = "0.1.0"
