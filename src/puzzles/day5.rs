@@ -1,12 +1,12 @@
 use nom::{
     bytes::complete::tag,
     character::complete::{digit1, line_ending},
-    combinator::{map_res, opt},
-    multi::{many1, separated_list1},
+    combinator::{map_res},
+    multi::{separated_list1},
     sequence::separated_pair,
     IResult,
 };
-use std::collections::{HashMap, HashSet};
+use std::collections::{HashMap};
 
 fn parse_rule(input: &str) -> IResult<&str, (u32, u32)> {
     let (input, (a, b)) = separated_pair(parse_number, tag("|"), parse_number)(input)?;
