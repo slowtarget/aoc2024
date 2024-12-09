@@ -11,6 +11,7 @@ fn parse_digits(input: &str) -> Vec<usize> {
 /// Create the initial disk array based on parsed digits.
 fn create_disk(digits: &[usize]) -> Vec<i32> {
     let disk_size: usize = digits.iter().sum(); // Total size of the disk
+    println!("creating a disk : {}", &disk_size);
     vec![-1; disk_size]
 }
 
@@ -34,7 +35,6 @@ fn populate_disk(digits: &[usize]) -> Vec<i32> {
     }
     disk
 }
-
 
 /// Compact the disk by moving blocks one at a time from the end to the leftmost free space.
 fn compact_disk(disk: &mut Vec<i32>) {
