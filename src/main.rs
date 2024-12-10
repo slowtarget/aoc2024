@@ -19,6 +19,7 @@ fn main() {
                 "7" => {day7::solve(input);},
                 "8" => {day8::solve(input);},
                 "9" => {day9::solve(input);},
+                "10" => {day10::solve(input);},
                 _ => panic!("Day {} not found", day),
             }
         }
