@@ -1,4 +1,3 @@
-
 #[allow(dead_code)]
 pub fn get_test_cases() -> Vec<(i32, Vec<i64>, Vec<&'static str>, i64)> {
     vec![

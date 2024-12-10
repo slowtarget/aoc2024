@@ -1,10 +1,10 @@
-use std::collections::HashMap;
 use nom::{
-    IResult,
     character::complete::{digit1, space1},
     combinator::map_res,
     sequence::separated_pair,
+    IResult,
 };
+use std::collections::HashMap;
 
 fn parse_line(input: &str) -> IResult<&str, (i32, i32)> {
     separated_pair(
@@ -13,7 +13,6 @@ fn parse_line(input: &str) -> IResult<&str, (i32, i32)> {
         map_res(digit1, str::parse),
     )(input)
 }
-
 
 pub(crate) fn test() {
     let input = "3   4
@@ -25,7 +24,7 @@ pub(crate) fn test() {
     solve(input.to_string()); // 11
 }
 
-pub(crate) fn solve(input:String) {
+pub(crate) fn solve(input: String) {
     let mut left = Vec::new();
     let mut right = Vec::new();
 
@@ -45,7 +44,8 @@ pub(crate) fn solve(input:String) {
 }
 
 fn sum_of_differences(left: &Vec<i32>, right: &Vec<i32>) -> i32 {
-    left.iter().zip(right.iter())
+    left.iter()
+        .zip(right.iter())
         .map(|(a, b)| (a - b).abs())
         .sum()
 }

@@ -1,6 +1,6 @@
 use nom::{
     branch::alt,
-    bytes::complete::{tag},
+    bytes::complete::tag,
     character::complete::{char, digit1},
     combinator::{map, map_res},
     sequence::tuple,
@@ -21,11 +21,7 @@ fn parse_integer(input: &str) -> IResult<&str, i32> {
 fn parse_mul(input: &str) -> IResult<&str, (i32, i32)> {
     let (input, _) = tag("mul")(input)?;
     let (input, _) = char('(')(input)?;
-    let (input, (a, _, b)) = tuple((
-        parse_integer,
-        char(','),
-        parse_integer,
-    ))(input)?;
+    let (input, (a, _, b)) = tuple((parse_integer, char(','), parse_integer))(input)?;
     let (input, _) = char(')')(input)?;
     Ok((input, (a, b)))
 }
@@ -91,26 +87,32 @@ fn parse_all_muls(input: &str) -> Vec<(i32, i32)> {
             Ok((next_input, tuple)) => {
                 res.push(tuple);
                 remaining_input = next_input;
-            },
+            }
             Err(_) => {
                 // Consume one character and continue parsing
                 remaining_input = &remaining_input[1..];
-            },
+            }
         }
     }
 
     res
 }
 
-
 pub(crate) fn test() {
     let input = "xmul(2,4)&mul[3,7]!^don't()_mul(5,5)+mul(32,64](mul(11,8)undo()?mul(8,5))";
     solve(input.to_string()); //161
 }
 
-pub(crate) fn solve(input:String) {
-    let part1: i32 = input.lines().flat_map(parse_all_muls).map(|(a, b)| a * b).sum::<i32>();
-    let part2: i32 = parse_all_instructions(&*input).iter().map(|(a, b)| a * b).sum::<i32>();
+pub(crate) fn solve(input: String) {
+    let part1: i32 = input
+        .lines()
+        .flat_map(parse_all_muls)
+        .map(|(a, b)| a * b)
+        .sum::<i32>();
+    let part2: i32 = parse_all_instructions(&*input)
+        .iter()
+        .map(|(a, b)| a * b)
+        .sum::<i32>();
 
     println!("part1: {}, part2: {}", part1, part2);
 }

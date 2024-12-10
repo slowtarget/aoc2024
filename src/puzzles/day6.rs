@@ -3,9 +3,24 @@ use std::time::Instant;
 pub(crate) fn solve(input: String) {
     let start = Instant::now();
 
-    let (width,height, obstruction, guard_x, guard_y, direction) = parse_map(&input);
-    let ( part1_result, visited) = part1(&width, &height, &obstruction, &guard_x, &guard_y, &direction);
-    let part2_result = part2(width, height, obstruction, visited, guard_x, guard_y, direction);
+    let (width, height, obstruction, guard_x, guard_y, direction) = parse_map(&input);
+    let (part1_result, visited) = part1(
+        &width,
+        &height,
+        &obstruction,
+        &guard_x,
+        &guard_y,
+        &direction,
+    );
+    let part2_result = part2(
+        width,
+        height,
+        obstruction,
+        visited,
+        guard_x,
+        guard_y,
+        direction,
+    );
     let duration = start.elapsed();
     println!("Execution time: {} microseconds", duration.as_micros());
 
@@ -19,7 +34,7 @@ fn parse_map(input: &String) -> (usize, usize, Vec<bool>, usize, usize, usize) {
     let mut guard_x: usize = 0;
     let mut guard_y: usize = 0;
     let mut direction: usize = 0; // 0=North, 1=East, 2=South, 3=West
-    let guard_direction = ['^','>','v','<'];
+    let guard_direction = ['^', '>', 'v', '<'];
     let width = lines[0].len();
     let height = lines.len();
     for (y, line) in lines.iter().enumerate() {
@@ -30,7 +45,11 @@ fn parse_map(input: &String) -> (usize, usize, Vec<bool>, usize, usize, usize) {
                     obstruction[y * width + x] = true;
                 }
                 _ => {
-                    let d = guard_direction.iter().enumerate().find(|(_, x)| **x == ch).map(|(dir, _)| dir);
+                    let d = guard_direction
+                        .iter()
+                        .enumerate()
+                        .find(|(_, x)| **x == ch)
+                        .map(|(dir, _)| dir);
                     if d.is_some() {
                         direction = d.unwrap();
                         guard_x = x;
@@ -39,12 +58,18 @@ fn parse_map(input: &String) -> (usize, usize, Vec<bool>, usize, usize, usize) {
                 }
             }
         }
-
     }
     (width, height, obstruction, guard_x, guard_y, direction)
 }
 
-fn part1(width: &usize, height: &usize, obstruction: &Vec<bool>, guard_x: &usize, guard_y: &usize, direction: &usize) -> (usize, Vec<bool>) {
+fn part1(
+    width: &usize,
+    height: &usize,
+    obstruction: &Vec<bool>,
+    guard_x: &usize,
+    guard_y: &usize,
+    direction: &usize,
+) -> (usize, Vec<bool>) {
     let mut visited = vec![false; width * height];
     let mut guard_x = *guard_x;
     let mut guard_y = *guard_y;
@@ -83,8 +108,15 @@ fn part1(width: &usize, height: &usize, obstruction: &Vec<bool>, guard_x: &usize
     (count, visited)
 }
 
-fn part2(width: usize, height: usize, mut obstruction: Vec<bool>,visited: Vec<bool>, guard_x: usize, guard_y: usize, guard_dir:usize) -> i32 {
-
+fn part2(
+    width: usize,
+    height: usize,
+    mut obstruction: Vec<bool>,
+    visited: Vec<bool>,
+    guard_x: usize,
+    guard_y: usize,
+    guard_dir: usize,
+) -> i32 {
     // We want to find how many positions cause a loop if we place an obstruction there.
     // The new obstruction can't be placed at the guard's starting position.
 
@@ -107,7 +139,7 @@ fn part2(width: usize, height: usize, mut obstruction: Vec<bool>,visited: Vec<bo
                 // Place an obstruction
                 obstruction[y * width + x] = true;
 
-                if causes_loop(&width,&height, &obstruction, guard_x, guard_y, guard_dir) {
+                if causes_loop(&width, &height, &obstruction, guard_x, guard_y, guard_dir) {
                     count += 1;
                 }
 
@@ -120,8 +152,14 @@ fn part2(width: usize, height: usize, mut obstruction: Vec<bool>,visited: Vec<bo
     count
 }
 
-fn causes_loop(width: &usize, height: &usize, obstruction: &[bool], start_x: usize, start_y: usize, start_dir: usize) -> bool {
-
+fn causes_loop(
+    width: &usize,
+    height: &usize,
+    obstruction: &[bool],
+    start_x: usize,
+    start_y: usize,
+    start_dir: usize,
+) -> bool {
     // We'll track visited states as visited_states[(y * width + x) * 4 + dir]
     // If we ever revisit the same state, we have a loop.
     let mut visited_states = vec![false; 4 * width * height];
@@ -131,7 +169,7 @@ fn causes_loop(width: &usize, height: &usize, obstruction: &[bool], start_x: usi
     let mut dir = start_dir;
 
     // Movement deltas for (N, E, S, W)
-    let deltas = [(0isize, -1isize), (1,0), (0,1), (-1,0)];
+    let deltas = [(0isize, -1isize), (1, 0), (0, 1), (-1, 0)];
 
     // Mark the initial state as visited
     visited_states[(y * width + x) * 4 + dir] = true;
@@ -196,7 +234,7 @@ mod tests {
 #.........
 ......#...";
         let (width, height, obstruction, gx, gy, d) = parse_map(&input.to_string());
-        let (part1,_) = part1(&width, &height, &obstruction, &gx, &gy, &d);
+        let (part1, _) = part1(&width, &height, &obstruction, &gx, &gy, &d);
         assert_eq!(part1, 41);
     }
 
@@ -214,6 +252,6 @@ mod tests {
 ......#...";
         let (width, height, obstruction, gx, gy, d) = parse_map(&input.to_string());
         let (_part1, visited) = part1(&width, &height, &obstruction, &gx, &gy, &d);
-        assert_eq!(part2(width,height,obstruction, visited ,gx, gy, d), 6);
+        assert_eq!(part2(width, height, obstruction, visited, gx, gy, d), 6);
     }
 }

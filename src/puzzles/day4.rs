@@ -1,8 +1,4 @@
-use nom::{
-    IResult,
-    character::complete::anychar,
-    multi::many1,
-};
+use nom::{character::complete::anychar, multi::many1, IResult};
 
 fn parse_line(input: &str) -> IResult<&str, Vec<char>> {
     many1(anychar)(input)
@@ -61,7 +57,10 @@ pub(crate) fn solve(input: String) -> (u32, u32) {
 
     // Part Two
     let part_two_total = solve_part_two(&grid); // 1961 was too high - but tests pass
-    println!("Part Two - Total occurrences of 'X-MAS': {}", part_two_total);
+    println!(
+        "Part Two - Total occurrences of 'X-MAS': {}",
+        part_two_total
+    );
     (part_one_total, part_two_total)
 }
 
@@ -150,12 +149,7 @@ fn check_x_mas(grid: &Vec<Vec<Point>>, x: usize, y: usize) -> u32 {
 }
 
 // Function to check if both pairs in an orientation satisfy the condition
-fn check_orientation(
-    grid: &Vec<Vec<Point>>,
-    x: usize,
-    y: usize,
-    pairs: &[(usize, usize)],
-) -> bool {
+fn check_orientation(grid: &Vec<Vec<Point>>, x: usize, y: usize, pairs: &[(usize, usize)]) -> bool {
     for &(dir1, dir2) in pairs {
         if !check_pair(grid, x, y, dir1, dir2) {
             return false;
@@ -165,19 +159,18 @@ fn check_orientation(
 }
 
 // Function to check if the characters in the two directions are 'M' and 'S' in any order
-fn check_pair(
-    grid: &Vec<Vec<Point>>,
-    x: usize,
-    y: usize,
-    dir1: usize,
-    dir2: usize,
-) -> bool {
-    let pair = [dir1, dir2].map(|dir| {
-        grid[y][x].neighbours.get(dir)
-            .and_then(|&pos| pos.map(|(nx, ny)| grid[ny][nx].value)).unwrap_or_default()
-    }).iter().collect::<String>();
+fn check_pair(grid: &Vec<Vec<Point>>, x: usize, y: usize, dir1: usize, dir2: usize) -> bool {
+    let pair = [dir1, dir2]
+        .map(|dir| {
+            grid[y][x]
+                .neighbours
+                .get(dir)
+                .and_then(|&pos| pos.map(|(nx, ny)| grid[ny][nx].value))
+                .unwrap_or_default()
+        })
+        .iter()
+        .collect::<String>();
     pair == "MS" || pair == "SM"
-
 }
 
 #[cfg(test)]

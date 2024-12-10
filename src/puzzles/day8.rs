@@ -1,8 +1,5 @@
 use nom::{
-    bytes::complete::take_while1,
-    character::complete::newline,
-    multi::separated_list1,
-    IResult,
+    bytes::complete::take_while1, character::complete::newline, multi::separated_list1, IResult,
 };
 use std::collections::HashSet;
 use std::time::Instant;
@@ -12,12 +9,12 @@ fn parse(input: &str) -> IResult<&str, Vec<Vec<char>>> {
         newline,
         take_while1(|c: char| c.is_alphanumeric() || c == '.' || c == '#'),
     )(input)
-        .map(|(next_input, rows)| {
-            (
-                next_input,
-                rows.iter().map(|row| row.chars().collect()).collect(),
-            )
-        })
+    .map(|(next_input, rows)| {
+        (
+            next_input,
+            rows.iter().map(|row| row.chars().collect()).collect(),
+        )
+    })
 }
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 struct Point {
@@ -29,8 +26,14 @@ fn find_antennas(grid: &[Vec<char>]) -> Vec<(Point, char)> {
     let mut antennas = Vec::new();
     for (y, row) in grid.iter().enumerate() {
         for (x, &cell) in row.iter().enumerate() {
-            if cell != '.'  && cell != '#' {
-                antennas.push((Point { x: x as isize, y: y as isize }, cell));
+            if cell != '.' && cell != '#' {
+                antennas.push((
+                    Point {
+                        x: x as isize,
+                        y: y as isize,
+                    },
+                    cell,
+                ));
             }
         }
     }
@@ -60,20 +63,25 @@ fn calculate_antinodes(antennas: &[(Point, char)], grid_width: isize, grid_heigh
                 y: p2.y + dy,
             });
             // println!("candidates: {:?}", candidates);
-            candidates.iter().filter(|&Point { x, y }|{x >= &0isize && y >= &0isize && x < &grid_width && y < &grid_height}).for_each(|&Point { x, y }| {
-                antinodes.insert(Point {
-                    x,
-                    y,
+            candidates
+                .iter()
+                .filter(|&Point { x, y }| {
+                    x >= &0isize && y >= &0isize && x < &grid_width && y < &grid_height
+                })
+                .for_each(|&Point { x, y }| {
+                    antinodes.insert(Point { x, y });
                 });
-            });
-
         }
     }
     // println!("antennas: {:?}", antennas);
     // println!("antinodes: {:?}", antinodes);
     antinodes.len()
 }
-fn calculate_antinodes2(antennas: &[(Point, char)], grid_width: isize, grid_height: isize) -> usize {
+fn calculate_antinodes2(
+    antennas: &[(Point, char)],
+    grid_width: isize,
+    grid_height: isize,
+) -> usize {
     let mut antinodes = HashSet::new();
 
     for i in 0..antennas.len() {
@@ -88,17 +96,22 @@ fn calculate_antinodes2(antennas: &[(Point, char)], grid_width: isize, grid_heig
             let dx = p2.x - p1.x;
             let dy = p2.y - p1.y;
             let mut mult = 0;
-            while p1.x - dx * mult >= 0 && p1.y - dy * mult >= 0 && p1.x - dx * mult < grid_width && p1.y - dy * mult < grid_height {
+            while p1.x - dx * mult >= 0
+                && p1.y - dy * mult >= 0
+                && p1.x - dx * mult < grid_width
+                && p1.y - dy * mult < grid_height
+            {
                 let x = p1.x - dx * mult;
                 let y = p1.y - dy * mult;
-                antinodes.insert(Point {
-                    x,
-                    y,
-                });
+                antinodes.insert(Point { x, y });
                 mult += 1;
             }
             mult = 0;
-            while p2.x + dx * mult >= 0 && p2.y + dy * mult >= 0 && p2.x + dx * mult < grid_width && p2.y + dy * mult < grid_height {
+            while p2.x + dx * mult >= 0
+                && p2.y + dy * mult >= 0
+                && p2.x + dx * mult < grid_width
+                && p2.y + dy * mult < grid_height
+            {
                 antinodes.insert(Point {
                     x: p2.x + dx * mult,
                     y: p2.y + dy * mult,
@@ -135,7 +148,7 @@ pub fn solve(input: String) {
     let parse_duration = start.elapsed();
     let start_solve = Instant::now();
     let ans_part1 = part1(&*input);
-    let ans_part2 = part2(&*input); 
+    let ans_part2 = part2(&*input);
     let solve_duration = start_solve.elapsed();
     println!("Part1: {}", ans_part1);
     println!("Part2: {}", ans_part2);
@@ -196,7 +209,7 @@ mod tests {
         }
     }
     mod part2 {
-        use crate::puzzles::day8::{part2};
+        use crate::puzzles::day8::part2;
 
         #[test]
         fn provided() {
@@ -214,7 +227,8 @@ mod tests {
 ............
 ............";
             assert_eq!(part2(input), 34);
-        }#[test]
+        }
+        #[test]
         fn simple() {
             let input = "\
 T....#....

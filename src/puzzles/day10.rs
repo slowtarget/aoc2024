@@ -1,23 +1,23 @@
-use std::time::Instant;
 use nom::{
-    character::complete::{newline},
+    character::complete::newline,
     combinator::{map, map_res},
     multi::separated_list1,
     IResult,
 };
 use std::collections::{HashSet, VecDeque};
+use std::time::Instant;
 use timing_util::measure_time;
 
 /// Parse a single line of the map into a vector of integers.
 fn parse_line(input: &str) -> IResult<&str, Vec<u8>> {
     map(
-        nom::multi::many1(map_res(nom::character::complete::one_of("0123456789"), |c| {
-            c.to_string().parse::<u8>()
-        })),
+        nom::multi::many1(map_res(
+            nom::character::complete::one_of("0123456789"),
+            |c| c.to_string().parse::<u8>(),
+        )),
         |vec| vec,
     )(input)
 }
-
 
 /// Parse the entire input into a 2D grid of integers.
 fn parse_input(input: &str) -> IResult<&str, Vec<Vec<u8>>> {
@@ -92,12 +92,7 @@ fn part1(grid: &[Vec<u8>]) -> usize {
 }
 
 fn calculate_rating(x: usize, y: usize, grid: &[Vec<u8>]) -> usize {
-    fn dfs(
-        x: usize,
-        y: usize,
-        grid: &[Vec<u8>],
-        visited: &mut HashSet<(usize, usize)>,
-    ) -> usize {
+    fn dfs(x: usize, y: usize, grid: &[Vec<u8>], visited: &mut HashSet<(usize, usize)>) -> usize {
         // Base case: End the trail if we've reached height 9
         if grid[x][y] == 9 {
             return 1;
@@ -137,22 +132,24 @@ fn part2(grid: &[Vec<u8>]) -> usize {
 }
 
 pub fn solve(input: String) {
-    let (_, grid) = measure_time!({parse_input(&input).unwrap()});
+    let (_, grid) = measure_time!({ parse_input(&input).unwrap() });
 
-    let total_score = measure_time!({part1(&grid)}); // From Part 1
+    let total_score = measure_time!({ part1(&grid) });
     println!("Part 1: {}", total_score);
 
-    let total_rating = measure_time!({part2(&grid)});
+    let total_rating = measure_time!({ part2(&grid) });
     println!("Part 2: {}", total_rating);
 }
 
 #[cfg(test)]
-mod tests2 {
+mod tests {
     use super::*;
+    mod tests_part2 {
+        use super::*;
 
-    #[test]
-    fn test_example_part2() {
-        let input = "\
+        #[test]
+        fn test_example_part2() {
+            let input = "\
 5590559
 5551598
 5552557
@@ -160,13 +157,13 @@ mod tests2 {
 7655987
 8765555
 9875555";
-        let (_, grid) = parse_input(input).unwrap();
-        assert_eq!(part2(&grid), 13);
-    }
+            let (_, grid) = parse_input(input).unwrap();
+            assert_eq!(part2(&grid), 13);
+        }
 
-    #[test]
-    fn test_large_example_part2() {
-        let input = "\
+        #[test]
+        fn test_large_example_part2() {
+            let input = "\
 89010123
 78121874
 87430965
@@ -175,18 +172,17 @@ mod tests2 {
 32019012
 01329801
 10456732";
-        let (_, grid) = parse_input(input).unwrap();
-        assert_eq!(part2(&grid), 81);
+            let (_, grid) = parse_input(input).unwrap();
+            assert_eq!(part2(&grid), 81);
+        }
     }
-}
 
-#[cfg(test)]
-mod tests1 {
-    use super::*;
+    mod tests_part1 {
+        use super::*;
 
-    #[test]
-    fn test_example_input() {
-        let input = "\
+        #[test]
+        fn test_example_input() {
+            let input = "\
 89010123
 78121874
 87430965
@@ -195,7 +191,8 @@ mod tests1 {
 32019012
 01329801
 10456732";
-        let (_, grid) = parse_input(input).unwrap();
-        assert_eq!(part1(&grid), 36);
+            let (_, grid) = parse_input(input).unwrap();
+            assert_eq!(part1(&grid), 36);
+        }
     }
 }

@@ -5,7 +5,7 @@ use timing_util::measure_time;
 #[derive(Debug, Clone, PartialEq, Default)]
 struct File {
     id: usize,
-    size: usize
+    size: usize,
 }
 #[derive(Debug, Clone, PartialEq, Default)]
 struct Partition {
@@ -23,23 +23,22 @@ fn parse_digits(input: &str) -> Vec<usize> {
 }
 
 /// Chunk the digits array into an array of Partitions
-    fn chunk(input: &[usize]) -> Vec<Partition> {
-        let capacity = input.len() / 2; // Assuming each file has size + free space
-        let mut partitions = Vec::with_capacity(capacity);
+fn chunk(input: &[usize]) -> Vec<Partition> {
+    let capacity = input.len() / 2; // Assuming each file has size + free space
+    let mut partitions = Vec::with_capacity(capacity);
 
-        input.chunks(2).enumerate().for_each(|(id, chunk)| {
-            let size = chunk[0];
-            let free = if chunk.len() == 2 { chunk[1] } else { 0 };
+    input.chunks(2).enumerate().for_each(|(id, chunk)| {
+        let size = chunk[0];
+        let free = if chunk.len() == 2 { chunk[1] } else { 0 };
 
-            let file = File { size, id };
-            let mut data: [Option<File>; 9] = Default::default();
-            data[0] = Some(file);
+        let file = File { size, id };
+        let mut data: [Option<File>; 9] = Default::default();
+        data[0] = Some(file);
 
-            partitions.push(Partition { id, data, free });
-        });
+        partitions.push(Partition { id, data, free });
+    });
 
-        partitions
-
+    partitions
 }
 fn compact_partitions(mut partitions: Vec<Partition>) -> Vec<Partition> {
     let mut last_free_of_size = [0; 9];
@@ -50,7 +49,6 @@ fn compact_partitions(mut partitions: Vec<Partition>) -> Vec<Partition> {
         let file = partitions[i].data[0].as_ref().cloned();
 
         if let Some(file) = file {
-
             let last = last_free_of_size[file.size - 1];
             if last < partitions[i].id {
                 // Use split_at_mut to safely create non-overlapping mutable slices
@@ -60,7 +58,11 @@ fn compact_partitions(mut partitions: Vec<Partition>) -> Vec<Partition> {
                 for candidate_partition in &mut left[last..] {
                     if candidate_partition.free >= file.size {
                         // Find the first empty slot in the candidate partition
-                        if let Some(slot) = candidate_partition.data.iter_mut().find(|entry| entry.is_none()) {
+                        if let Some(slot) = candidate_partition
+                            .data
+                            .iter_mut()
+                            .find(|entry| entry.is_none())
+                        {
                             // Move the file
                             *slot = Some(file.clone());
                             candidate_partition.free -= file.size;
@@ -130,7 +132,9 @@ fn compact_disk(disk: &mut Vec<i32>) {
                 disk[read_pos] = -1;
             }
         }
-        if read_pos == 0 { break; } // Prevent underflow
+        if read_pos == 0 {
+            break;
+        } // Prevent underflow
         read_pos -= 1;
     }
 }
@@ -140,16 +144,14 @@ fn calculate_checksum(disk: &[i32]) -> i64 {
     disk.iter()
         .enumerate()
         .filter(|(_, &id)| id != -1)
-        .map(|(pos, &id)| {
-            pos as i64 * id as i64})
+        .map(|(pos, &id)| pos as i64 * id as i64)
         .sum()
 }
 
 /// Solve function for parsing, compaction, and checksum calculation.
 pub fn solve(input: String) -> (i64, i64, i64) {
-
     let start = Instant::now();
-    let  digits = parse_digits(&input);
+    let digits = parse_digits(&input);
     let mut disk = populate_disk(&digits);
     let parse_duration = start.elapsed();
 
@@ -159,15 +161,18 @@ pub fn solve(input: String) -> (i64, i64, i64) {
     let part1_duration = start_compact.elapsed();
 
     let start_compact = Instant::now();
-    let partitions = measure_time!({compact_partitions(measure_time!({chunk(&digits)}))});
+    let partitions = measure_time!({ compact_partitions(measure_time!({ chunk(&digits) })) });
 
-    let part2_2: i64 = measure_time!({calculate_checksum_from_partition(&partitions)});
+    let part2_2: i64 = measure_time!({ calculate_checksum_from_partition(&partitions) });
     let part2_2_duration = start_compact.elapsed();
-
 
     println!("Checksums: {} {} 0", part1, part2_2);
     println!("Parsing took: {} microseconds", parse_duration.as_micros());
-    println!("Compaction and checksum took: {}, {} microseconds", part1_duration.as_micros(), part2_2_duration.as_micros());
+    println!(
+        "Compaction and checksum took: {}, {} microseconds",
+        part1_duration.as_micros(),
+        part2_2_duration.as_micros()
+    );
     println!("total duration {:?}", start.elapsed());
     (part1, part2_2, part2_2)
 }
@@ -191,7 +196,6 @@ fn calculate_checksum_from_partition(partitions: &Vec<Partition>) -> i64 {
     sum
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -200,42 +204,48 @@ mod tests {
 
         #[test]
         fn provided() {
-            assert_eq!(solve(String::from("2333133121414131402")),(1928, 2858, 2858))
+            assert_eq!(
+                solve(String::from("2333133121414131402")),
+                (1928, 2858, 2858)
+            )
         }
         #[test]
         fn simple() {
-            assert_eq!(solve(String::from("1234")),(6, 12, 12))
+            assert_eq!(solve(String::from("1234")), (6, 12, 12))
         }
         #[test]
         fn simple2() {
-            assert_eq!(solve(String::from("1245")),(10, 18, 18))
+            assert_eq!(solve(String::from("1245")), (10, 18, 18))
         }
         #[test]
         fn simpler() {
-            assert_eq!(solve(String::from("10")),(0, 0, 0))
+            assert_eq!(solve(String::from("10")), (0, 0, 0))
         }
         #[test]
         fn simpler1() {
-            assert_eq!(solve(String::from("1010")),(1, 1, 1))
+            assert_eq!(solve(String::from("1010")), (1, 1, 1))
         }
         #[test]
         fn simpler2() {
-            assert_eq!(solve(String::from("101010")),(5, 5, 5))
+            assert_eq!(solve(String::from("101010")), (5, 5, 5))
         }
         #[test]
         fn simpler_move() {
-            assert_eq!(solve(String::from("1110")),(1, 1, 1))
+            assert_eq!(solve(String::from("1110")), (1, 1, 1))
         }
         #[test]
         fn simpler_move2() {
-            assert_eq!(solve(String::from("101110")),(5, 5, 5))
+            assert_eq!(solve(String::from("101110")), (5, 5, 5))
         }
     }
     #[test]
     fn test_parse_digits() {
         let input = "2333133121414131402";
         let digits = parse_digits(input);
-        assert_eq!(digits, vec![2, 3, 3, 3, 1, 3, 3, 1, 2, 1, 4, 1, 4, 1, 3, 1, 4, 0, 2]);
+        assert_eq!(
+            digits,
+            vec![2, 3, 3, 3, 1, 3, 3, 1, 2, 1, 4, 1, 4, 1, 3, 1, 4, 0, 2]
+        );
     }
 
     mod create_disk {
@@ -262,19 +272,14 @@ mod tests {
 
         #[test]
         fn test_populate_disk() {
-            let digits = vec![2, 3,   3, 3,   1, 2,   1, 4,   1, 4,   1, 3,   1, 4,   1, 2];
-                       //                  0       1       2       3       4       5       6       7
+            let digits = vec![2, 3, 3, 3, 1, 2, 1, 4, 1, 4, 1, 3, 1, 4, 1, 2];
+            //                  0       1       2       3       4       5       6       7
             let disk = populate_disk(&digits);
             assert_eq!(
                 disk,
-                vec![0, 0, -1, -1, -1,
-                     1, 1, 1, -1, -1, -1,
-                     2, -1, -1,
-                     3, -1, -1, -1, -1,
-                     4,-1, -1, -1, -1,
-                     5,-1, -1, -1,
-                     6, -1, -1, -1, -1,
-                     7,-1, -1
+                vec![
+                    0, 0, -1, -1, -1, 1, 1, 1, -1, -1, -1, 2, -1, -1, 3, -1, -1, -1, -1, 4, -1, -1,
+                    -1, -1, 5, -1, -1, -1, 6, -1, -1, -1, -1, 7, -1, -1
                 ]
             );
         }
@@ -282,12 +287,7 @@ mod tests {
         fn simple() {
             let digits = vec![2, 3];
             let disk = populate_disk(&digits);
-            assert_eq!(
-                disk,
-                vec![
-                    0, 0, -1, -1, -1
-                ]
-            );
+            assert_eq!(disk, vec![0, 0, -1, -1, -1]);
         }
     }
 
@@ -300,34 +300,41 @@ mod tests {
             compact_disk(&mut disk);
             assert_eq!(disk, vec![0, 2, 2, 1, 1, 1, 2, 2, 2, -1, -1, -1, -1, -1]);
         }
-
     }
     mod chunk {
         use crate::puzzles::day9::{chunk, File, Partition};
 
         #[test]
         fn simple() {
-            let input = [1,2,3,4];
+            let input = [1, 2, 3, 4];
             let expected = [
                 Partition {
                     id: 0,
                     data: [
-                        Some(File {
-                            id: 0,
-                            size: 1,
-                        }),
-                        Default::default(),Default::default(),Default::default(),Default::default(),Default::default(),Default::default(),Default::default(),Default::default(),
+                        Some(File { id: 0, size: 1 }),
+                        Default::default(),
+                        Default::default(),
+                        Default::default(),
+                        Default::default(),
+                        Default::default(),
+                        Default::default(),
+                        Default::default(),
+                        Default::default(),
                     ],
                     free: 2,
                 },
                 Partition {
                     id: 1,
                     data: [
-                        Some(File {
-                            id: 1,
-                            size: 3,
-                        }),
-                        Default::default(),Default::default(),Default::default(),Default::default(),Default::default(),Default::default(),Default::default(),Default::default(),
+                        Some(File { id: 1, size: 3 }),
+                        Default::default(),
+                        Default::default(),
+                        Default::default(),
+                        Default::default(),
+                        Default::default(),
+                        Default::default(),
+                        Default::default(),
+                        Default::default(),
                     ],
                     free: 4,
                 },
@@ -417,7 +424,13 @@ mod tests {
             assert_eq!(result.len(), 10);
             for (i, partition) in result.iter().enumerate() {
                 assert_eq!(partition.id, i);
-                assert_eq!(partition.data[0], Some(File { size: input[i * 2], id: i }));
+                assert_eq!(
+                    partition.data[0],
+                    Some(File {
+                        size: input[i * 2],
+                        id: i
+                    })
+                );
                 if i * 2 + 1 < input.len() {
                     assert_eq!(partition.free, input[i * 2 + 1]);
                 } else {
@@ -429,221 +442,232 @@ mod tests {
     mod compact_partitions {
         use super::*;
         #[cfg(test)]
-
-
-
-
-            #[test]
-            fn test_compact_basic_case() {
-                let input = vec![
-                    Partition {
-                        id: 0,
-                        data: {
-                            let mut data: [Option<File>; 9] = Default::default();
-                            data[0] = Some(File { size: 3, id: 0 });
-                            data
-                        },
-                        free: 5,
+        #[test]
+        fn test_compact_basic_case() {
+            let input = vec![
+                Partition {
+                    id: 0,
+                    data: {
+                        let mut data: [Option<File>; 9] = Default::default();
+                        data[0] = Some(File { size: 3, id: 0 });
+                        data
                     },
-                    Partition {
-                        id: 1,
-                        data: {
-                            let mut data: [Option<File>; 9] = Default::default();
-                            data[0] = Some(File { size: 3, id: 1 });
-                            data
-                        },
-                        free: 5,
+                    free: 5,
+                },
+                Partition {
+                    id: 1,
+                    data: {
+                        let mut data: [Option<File>; 9] = Default::default();
+                        data[0] = Some(File { size: 3, id: 1 });
+                        data
                     },
-                ];
+                    free: 5,
+                },
+            ];
 
-                let actual = compact_partitions(input.clone());
+            let actual = compact_partitions(input.clone());
 
-                // The file in partition 0 should move to partition 1
-                let expected = vec![
-                    Partition {
-                        id: 0,
-                        data: {
-                            let mut data: [Option<File>; 9] = Default::default();
-                            data[0] = Some(File { size: 3, id: 0 });
-                            data[1] = Some(File { size: 3, id: 1 });
-                            data
-                        },
-                        free: 2,
+            // The file in partition 0 should move to partition 1
+            let expected = vec![
+                Partition {
+                    id: 0,
+                    data: {
+                        let mut data: [Option<File>; 9] = Default::default();
+                        data[0] = Some(File { size: 3, id: 0 });
+                        data[1] = Some(File { size: 3, id: 1 });
+                        data
                     },
-                    Partition {
-                        id: 1,
-                        data: {
-                            let mut data: [Option<File>; 9] = Default::default();
-                            data[0] = Some(File { size: 3, id: 0 });
-                            data
-                        },
-                        free: 5,
+                    free: 2,
+                },
+                Partition {
+                    id: 1,
+                    data: {
+                        let mut data: [Option<File>; 9] = Default::default();
+                        data[0] = Some(File { size: 3, id: 0 });
+                        data
                     },
-                ];
+                    free: 5,
+                },
+            ];
 
-                assert_eq!(actual, expected);
-            }
+            assert_eq!(actual, expected);
+        }
 
-            #[test]
-            fn test_compact_edge_case_small_large_space() {
-                let partitions = vec![
-                    Partition {
-                        id: 0,
-                        data: {
-                            let mut data: [Option<File>; 9] = Default::default();
-                            data[0] = Some(File { size: 1, id: 1 });
-                            data
-                        },
-                        free: 10,
+        #[test]
+        fn test_compact_edge_case_small_large_space() {
+            let partitions = vec![
+                Partition {
+                    id: 0,
+                    data: {
+                        let mut data: [Option<File>; 9] = Default::default();
+                        data[0] = Some(File { size: 1, id: 1 });
+                        data
                     },
-                    Partition {
-                        id: 1,
-                        data: Default::default(),
-                        free: 5,
+                    free: 10,
+                },
+                Partition {
+                    id: 1,
+                    data: Default::default(),
+                    free: 5,
+                },
+            ];
+
+            let result = compact_partitions(partitions.clone());
+
+            // The file in partition 0 should remain in place, as the free space is already sufficient
+            let expected = vec![
+                Partition {
+                    id: 0,
+                    data: {
+                        let mut data: [Option<File>; 9] = Default::default();
+                        data[0] = Some(File { size: 1, id: 1 });
+                        data
                     },
-                ];
+                    free: 10,
+                },
+                Partition {
+                    id: 1,
+                    data: Default::default(),
+                    free: 5,
+                },
+            ];
 
-                let result = compact_partitions(partitions.clone());
+            assert_eq!(result, expected);
+        }
 
-                // The file in partition 0 should remain in place, as the free space is already sufficient
-                let expected = vec![
-                    Partition {
-                        id: 0,
-                        data: {
-                            let mut data: [Option<File>; 9] = Default::default();
-                            data[0] = Some(File { size: 1, id: 1 });
-                            data
-                        },
-                        free: 10,
+        #[test]
+        fn test_compact_no_free_space() {
+            let partitions = vec![
+                Partition {
+                    id: 0,
+                    data: {
+                        let mut data: [Option<File>; 9] = Default::default();
+                        data[0] = Some(File { size: 3, id: 1 });
+                        data
                     },
-                    Partition {
-                        id: 1,
-                        data: Default::default(),
-                        free: 5,
+                    free: 0,
+                },
+                Partition {
+                    id: 1,
+                    data: Default::default(),
+                    free: 2,
+                },
+            ];
+
+            let result = compact_partitions(partitions.clone());
+
+            // No file should move as there is no free space sufficient for the file
+            assert_eq!(result, partitions);
+        }
+
+        #[test]
+        fn test_compact_empty_partitions() {
+            let partitions = vec![
+                Partition {
+                    id: 0,
+                    data: Default::default(),
+                    free: 10,
+                },
+                Partition {
+                    id: 1,
+                    data: Default::default(),
+                    free: 5,
+                },
+            ];
+
+            let result = compact_partitions(partitions.clone());
+
+            // The partitions are already empty, no changes expected
+            assert_eq!(result, partitions);
+        }
+
+        #[test]
+        fn test_compact_already_compact() {
+            let partitions = vec![
+                Partition {
+                    id: 0,
+                    data: {
+                        let mut data: [Option<File>; 9] = Default::default();
+                        data[0] = Some(File { size: 3, id: 1 });
+                        data
                     },
-                ];
+                    free: 10,
+                },
+                Partition {
+                    id: 1,
+                    data: Default::default(),
+                    free: 5,
+                },
+            ];
 
-                assert_eq!(result, expected);
-            }
+            let result = compact_partitions(partitions.clone());
 
-            #[test]
-            fn test_compact_no_free_space() {
-                let partitions = vec![
-                    Partition {
-                        id: 0,
-                        data: {
-                            let mut data: [Option<File>; 9] = Default::default();
-                            data[0] = Some(File { size: 3, id: 1 });
-                            data
-                        },
-                        free: 0,
-                    },
-                    Partition {
-                        id: 1,
-                        data: Default::default(),
-                        free: 2,
-                    },
-                ];
-
-                let result = compact_partitions(partitions.clone());
-
-                // No file should move as there is no free space sufficient for the file
-                assert_eq!(result, partitions);
-            }
-
-            #[test]
-            fn test_compact_empty_partitions() {
-                let partitions = vec![
-                    Partition {
-                        id: 0,
-                        data: Default::default(),
-                        free: 10,
-                    },
-                    Partition {
-                        id: 1,
-                        data: Default::default(),
-                        free: 5,
-                    },
-                ];
-
-                let result = compact_partitions(partitions.clone());
-
-                // The partitions are already empty, no changes expected
-                assert_eq!(result, partitions);
-            }
-
-            #[test]
-            fn test_compact_already_compact() {
-                let partitions = vec![
-                    Partition {
-                        id: 0,
-                        data: {
-                            let mut data: [Option<File>; 9] = Default::default();
-                            data[0] = Some(File { size: 3, id: 1 });
-                            data
-                        },
-                        free: 10,
-                    },
-                    Partition {
-                        id: 1,
-                        data: Default::default(),
-                        free: 5,
-                    },
-                ];
-
-                let result = compact_partitions(partitions.clone());
-
-                // The partitions are already compact
-                assert_eq!(result, partitions);
-            }
-
+            // The partitions are already compact
+            assert_eq!(result, partitions);
+        }
 
         #[test]
         fn weird() {
             let input = vec![
-              Partition {
-                  id: 0,
-                  data: [
-                      Some(File {
-                          id: 0,
-                          size: 1
-                      }), Default::default(),Default::default(),Default::default(),Default::default(),Default::default(),Default::default(),Default::default(),Default::default(),
-                  ],
-                  free: 1, // 1 will get moved into here
-              },
-              Partition {
-                  id: 1,
-                  data: [
-                      Some(File {
-                          id: 1,
-                          size: 1
-                      }), Default::default(),Default::default(),Default::default(),Default::default(),Default::default(),Default::default(),Default::default(),Default::default(),
-                  ],
-                  free: 5, // 2 will get moved in here
-              },
-              Partition {
-                  id: 2,
-                  data: [
-                      Some(File {
-                          id: 2,
-                          size: 5
-                      }), Default::default(),Default::default(),Default::default(),Default::default(),Default::default(),Default::default(),Default::default(),Default::default(),
-                  ],
-                  free: 0,
-              },
+                Partition {
+                    id: 0,
+                    data: [
+                        Some(File { id: 0, size: 1 }),
+                        Default::default(),
+                        Default::default(),
+                        Default::default(),
+                        Default::default(),
+                        Default::default(),
+                        Default::default(),
+                        Default::default(),
+                        Default::default(),
+                    ],
+                    free: 1, // 1 will get moved into here
+                },
+                Partition {
+                    id: 1,
+                    data: [
+                        Some(File { id: 1, size: 1 }),
+                        Default::default(),
+                        Default::default(),
+                        Default::default(),
+                        Default::default(),
+                        Default::default(),
+                        Default::default(),
+                        Default::default(),
+                        Default::default(),
+                    ],
+                    free: 5, // 2 will get moved in here
+                },
+                Partition {
+                    id: 2,
+                    data: [
+                        Some(File { id: 2, size: 5 }),
+                        Default::default(),
+                        Default::default(),
+                        Default::default(),
+                        Default::default(),
+                        Default::default(),
+                        Default::default(),
+                        Default::default(),
+                        Default::default(),
+                    ],
+                    free: 0,
+                },
             ];
             let expected = vec![
                 Partition {
                     id: 0,
                     data: [
-                        Some(File {
-                            id: 0,
-                            size: 1
-                        }),
-                        Some(File {
-                            id: 1,
-                            size: 1
-                        }),Default::default(),Default::default(),Default::default(),Default::default(),Default::default(),Default::default(),Default::default(),
+                        Some(File { id: 0, size: 1 }),
+                        Some(File { id: 1, size: 1 }),
+                        Default::default(),
+                        Default::default(),
+                        Default::default(),
+                        Default::default(),
+                        Default::default(),
+                        Default::default(),
+                        Default::default(),
                     ],
                     free: 0, // 1 has been moved into here
                 },
@@ -652,13 +676,16 @@ mod tests {
                     data: [
                         Some(File {
                             id: 0, // 1 was moved away
-                            size: 1
+                            size: 1,
                         }),
-                        Some(File {
-                            id: 2,
-                            size: 5
-                        }),
-                        Default::default(),Default::default(),Default::default(),Default::default(),Default::default(),Default::default(),Default::default(),
+                        Some(File { id: 2, size: 5 }),
+                        Default::default(),
+                        Default::default(),
+                        Default::default(),
+                        Default::default(),
+                        Default::default(),
+                        Default::default(),
+                        Default::default(),
                     ],
                     free: 0, // 2 was moved in here
                 },
@@ -667,8 +694,16 @@ mod tests {
                     data: [
                         Some(File {
                             id: 0, // 2 was moved away
-                            size: 5
-                        }), Default::default(),Default::default(),Default::default(),Default::default(),Default::default(),Default::default(),Default::default(),Default::default(),
+                            size: 5,
+                        }),
+                        Default::default(),
+                        Default::default(),
+                        Default::default(),
+                        Default::default(),
+                        Default::default(),
+                        Default::default(),
+                        Default::default(),
+                        Default::default(),
                     ],
                     free: 0,
                 },
@@ -681,36 +716,32 @@ mod tests {
 
         #[test]
         fn simple_1() {
-            let input = vec![
-                Partition {
-                    id: 0,
-                    data: {
-                        let mut data: [Option<File>; 9] = Default::default();
-                        data[0] = Some(File { id: 0, size: 1 });
-                        data[1] = Some(File { id: 1, size: 1 });
-                        data
-                    },
-                    free: 0,
+            let input = vec![Partition {
+                id: 0,
+                data: {
+                    let mut data: [Option<File>; 9] = Default::default();
+                    data[0] = Some(File { id: 0, size: 1 });
+                    data[1] = Some(File { id: 1, size: 1 });
+                    data
                 },
-            ];
+                free: 0,
+            }];
             assert_eq!(calculate_checksum_from_partition(&input), 1);
         }
 
         #[test]
         fn simple_5() {
-            let input = vec![
-                Partition {
-                    id: 0,
-                    data: {
-                        let mut data: [Option<File>; 9] = Default::default();
-                        data[0] = Some(File { id: 0, size: 1 });
-                        data[1] = Some(File { id: 1, size: 1 });
-                        data[2] = Some(File { id: 2, size: 1 });
-                        data
-                    },
-                    free: 0,
+            let input = vec![Partition {
+                id: 0,
+                data: {
+                    let mut data: [Option<File>; 9] = Default::default();
+                    data[0] = Some(File { id: 0, size: 1 });
+                    data[1] = Some(File { id: 1, size: 1 });
+                    data[2] = Some(File { id: 2, size: 1 });
+                    data
                 },
-            ];
+                free: 0,
+            }];
             assert_eq!(calculate_checksum_from_partition(&input), 5);
         }
 
@@ -750,13 +781,11 @@ mod tests {
 
         #[test]
         fn empty_partition() {
-            let input = vec![
-                Partition {
-                    id: 0,
-                    data: Default::default(),
-                    free: 10,
-                },
-            ];
+            let input = vec![Partition {
+                id: 0,
+                data: Default::default(),
+                free: 10,
+            }];
             assert_eq!(calculate_checksum_from_partition(&input), 0);
         }
 
@@ -784,25 +813,21 @@ mod tests {
         #[test]
         fn test_calculate_checksum() {
             let disk = vec![
-                0, 0, 1, 1, 1, 2, 3, 3, 3, 4, 4, 5, 5, 5, 5, 6, 6, 6, 6, 7, 7, 7, 8, 8, 8, 8, 9, 9, -1,
-                -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+                0, 0, 1, 1, 1, 2, 3, 3, 3, 4, 4, 5, 5, 5, 5, 6, 6, 6, 6, 7, 7, 7, 8, 8, 8, 8, 9, 9,
+                -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
             ];
             let checksum = calculate_checksum(&disk);
             assert_eq!(checksum, 2453);
         }
         #[test]
         fn simple() {
-            let disk = vec![
-                0, 0, 1, 1, 1,
-            ];
+            let disk = vec![0, 0, 1, 1, 1];
             let checksum = calculate_checksum(&disk);
             assert_eq!(checksum, 9); // 0 + 0 + 2 + 3 + 4
         }
         #[test]
         fn more() {
-            let disk = vec![
-                0, 0, 1, 1, 1, 2, 3, 4
-            ];
+            let disk = vec![0, 0, 1, 1, 1, 2, 3, 4];
             let checksum = calculate_checksum(&disk);
             assert_eq!(checksum, 65); // 0 + 0 + 2 + 3 + 4 + 10 + 18 + 28
         }

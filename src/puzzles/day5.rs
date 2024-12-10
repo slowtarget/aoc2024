@@ -1,12 +1,12 @@
 use nom::{
     bytes::complete::tag,
     character::complete::{digit1, line_ending},
-    combinator::{map_res},
-    multi::{separated_list1},
+    combinator::map_res,
+    multi::separated_list1,
     sequence::separated_pair,
     IResult,
 };
-use std::collections::{HashMap};
+use std::collections::HashMap;
 
 fn parse_rule(input: &str) -> IResult<&str, (u32, u32)> {
     let (input, (a, b)) = separated_pair(parse_number, tag("|"), parse_number)(input)?;
@@ -44,7 +44,9 @@ fn is_valid_update(rules: &[(u32, u32)], update: &[u32]) -> bool {
         .collect();
 
     for &(before, after) in rules {
-        if let (Some(&before_index), Some(&after_index)) = (index_map.get(&before), index_map.get(&after)) {
+        if let (Some(&before_index), Some(&after_index)) =
+            (index_map.get(&before), index_map.get(&after))
+        {
             if before_index > after_index {
                 return false;
             }
@@ -81,10 +83,10 @@ mod tests {
         let input = "47|53\n97|13\n\n75,47,61,53,29\n97,61,53,29,13";
         let (_, (rules, updates)) = parse_input(input).unwrap();
         assert_eq!(rules, vec![(47, 53), (97, 13)]);
-        assert_eq!(updates, vec![
-            vec![75, 47, 61, 53, 29],
-            vec![97, 61, 53, 29, 13],
-        ]);
+        assert_eq!(
+            updates,
+            vec![vec![75, 47, 61, 53, 29], vec![97, 61, 53, 29, 13],]
+        );
     }
 
     #[test]
