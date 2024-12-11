@@ -10,3 +10,4 @@ pub mod day7;
 mod day7_test_util;
 pub mod day8;
 pub mod day9;
+pub mod day11;

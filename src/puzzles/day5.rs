@@ -80,7 +80,12 @@ mod tests {
 
     #[test]
     fn test_parse_input() {
-        let input = "47|53\n97|13\n\n75,47,61,53,29\n97,61,53,29,13";
+        let input = "\
+47|53
+97|13
+
+75,47,61,53,29
+97,61,53,29,13";
         let (_, (rules, updates)) = parse_input(input).unwrap();
         assert_eq!(rules, vec![(47, 53), (97, 13)]);
         assert_eq!(

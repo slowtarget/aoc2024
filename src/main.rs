@@ -53,6 +53,9 @@ fn main() {
                 "10" => {
                     day10::solve(input);
                 }
+                "11" => {
+                    day11::solve(input);
+                }
                 _ => panic!("Day {} not found", day),
             }
         }
