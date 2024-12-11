@@ -3,9 +3,10 @@ use nom::{
     multi::separated_list1,
     IResult,
 };
+use std::collections::HashMap;
 use std::time::Instant;
 
-// Parse a list of integers from the input
+// Parse input into a vector of integers
 fn parse_input(input: &str) -> IResult<&str, Vec<i64>> {
     separated_list1(space1, parse_i64)(input)
 }
@@ -16,44 +17,75 @@ fn parse_i64(input: &str) -> IResult<&str, i64> {
     Ok((input, val))
 }
 
-// Function to apply transformation rules to a stone
-fn transform_stone(stone: i64) -> Vec<i64> {
-    if stone == 0 {
-        vec![1]
-    } else {
-        let stone_str = stone.to_string();
-        if stone_str.len() % 2 == 0 {
-            let mid = stone_str.len() / 2;
-            let left = stone_str[..mid].parse::<i64>().unwrap();
-            let right = stone_str[mid..].parse::<i64>().unwrap();
-            vec![left, right]
+// Apply transformation rules to a single number and update the counts
+fn transform_stone_counts(stone_counts: &HashMap<i64, usize>) -> HashMap<i64, usize> {
+    let mut new_counts = HashMap::with_capacity(3811);
+
+    for (&stone, &count) in stone_counts {
+        if stone == 0 {
+            *new_counts.entry(1).or_insert(0) += count;
         } else {
-            vec![stone * 2024]
+            let stone_str = stone.to_string();
+            if stone_str.len() % 2 == 0 {
+                let mid = stone_str.len() / 2;
+                let left = stone_str[..mid].parse::<i64>().unwrap();
+                let right = stone_str[mid..].parse::<i64>().unwrap();
+                *new_counts.entry(left).or_insert(0) += count;
+                *new_counts.entry(right).or_insert(0) += count;
+            } else {
+                let new_stone = stone * 2024;
+                *new_counts.entry(new_stone).or_insert(0) += count;
+            }
         }
     }
+
+    new_counts
 }
 
-// Simulate a number of blinks
-fn simulate_blinks(stones: &[i64], blinks: usize) -> Vec<i64> {
-    let mut current_stones = stones.to_vec();
+// Simulate blinks by iterating over transformations
+fn simulate_blinks(stone_counts: &HashMap<i64, usize>, blinks: usize) -> HashMap<i64, usize> {
+    let mut new_counts = stone_counts.clone();
+    
     for _ in 0..blinks {
-        current_stones = current_stones
-            .iter()
-            .flat_map(|&stone| transform_stone(stone))
-            .collect();
+        new_counts = transform_stone_counts(&new_counts);
     }
-    current_stones
+
+    new_counts
+}
+
+fn initialise_counts(stones: &[i64]) -> HashMap<i64, usize> {
+    let mut stone_counts: HashMap<i64, usize> = HashMap::new();
+
+    // Initialize counts from the input
+    for &stone in stones {
+        *stone_counts.entry(stone).or_insert(0) += 1;
+    }
+    stone_counts
 }
 
 pub fn solve(input: String) {
     let (_, stones) = parse_input(&input).unwrap();
 
     let start = Instant::now();
-    let result_stones = simulate_blinks(&stones, 25);
+    let stone_counts = initialise_counts(&stones);
+    let part_1 = simulate_blinks(&stone_counts, 25);
+    let total_stones: usize = part_1.values().sum();
     let duration = start.elapsed();
 
-    println!("Number of stones after 25 blinks: {}", result_stones.len());
+    println!("Total unique stones after 25 blinks: {}", part_1.len());
+    println!("Total number of stones after 25 blinks: {}", total_stones);
     println!("Simulation took: {} microseconds", duration.as_micros());
+
+
+    let start = Instant::now();
+    let part_2 = simulate_blinks(&part_1, 50);
+    let total_stones: usize = part_2.values().sum();
+    let duration = start.elapsed();
+
+    println!("Total unique stones after 75 blinks: {}", part_2.len());
+    println!("Total number of stones after 75 blinks: {}", total_stones);
+    println!("Simulation took: {} microseconds", duration.as_micros());
+    
 }
 
 #[cfg(test)]
@@ -61,20 +93,33 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_transform_stone() {
-        assert_eq!(transform_stone(0), vec![1]);
-        assert_eq!(transform_stone(10), vec![1, 0]);
-        assert_eq!(transform_stone(99), vec![9, 9]);
-        assert_eq!(transform_stone(1), vec![2024]);
+    fn test_transform_stone_counts() {
+        let mut counts = HashMap::new();
+        counts.insert(0, 1);
+        counts.insert(10, 1);
+        counts.insert(99, 1);
+        counts.insert(1, 1);
+
+        let new_counts = transform_stone_counts(&counts);
+
+        let mut expected_counts = HashMap::new();
+        expected_counts.insert(1, 2); // 0 becomes 1, 1 remains as 2024
+        expected_counts.insert(0, 1); // 10 splits into 1, 0
+        expected_counts.insert(9, 2); // 99 splits into two 9s
+        expected_counts.insert(2024, 1); // 1 becomes 2024
+
+        assert_eq!(new_counts, expected_counts);
     }
 
     #[test]
     fn test_simulate_blinks() {
         let stones = vec![125, 17];
-        let after_1_blink = simulate_blinks(&stones, 1);
-        assert_eq!(after_1_blink, vec![253000, 1, 7]);
+        let counts_after_1_blink = simulate_blinks(&initialise_counts(&stones), 1);
+        let total_after_1_blink: usize = counts_after_1_blink.values().sum();
+        assert_eq!(total_after_1_blink, 3);
 
-        let after_2_blinks = simulate_blinks(&stones, 2);
-        assert_eq!(after_2_blinks, vec![253, 0, 2024, 14168]);
+        let counts_after_2_blinks = simulate_blinks(&initialise_counts(&stones), 2);
+        let total_after_2_blinks: usize = counts_after_2_blinks.values().sum();
+        assert_eq!(total_after_2_blinks, 4);
     }
 }
