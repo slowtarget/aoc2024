@@ -64,27 +64,24 @@ fn initialise_counts(stones: &[i64]) -> HashMap<i64, usize> {
 }
 
 pub fn solve(input: String) {
+    let start = Instant::now();
     let (_, stones) = parse_input(&input).unwrap();
+    let stone_counts = initialise_counts(&stones);
+    println!("Parsing took: {:?}", start.elapsed());
 
     let start = Instant::now();
-    let stone_counts = initialise_counts(&stones);
     let part_1 = simulate_blinks(&stone_counts, 25);
-    let total_stones: usize = part_1.values().sum();
-    let duration = start.elapsed();
 
     println!("Total unique stones after 25 blinks: {}", part_1.len());
-    println!("Total number of stones after 25 blinks: {}", total_stones);
-    println!("Simulation took: {} microseconds", duration.as_micros());
-
+    println!("Total number of stones after 25 blinks: {}", part_1.values().sum::<usize>());
+    println!("Part 1 took: {:?}", start.elapsed());
 
     let start = Instant::now();
     let part_2 = simulate_blinks(&part_1, 50);
-    let total_stones: usize = part_2.values().sum();
-    let duration = start.elapsed();
 
     println!("Total unique stones after 75 blinks: {}", part_2.len());
-    println!("Total number of stones after 75 blinks: {}", total_stones);
-    println!("Simulation took: {} microseconds", duration.as_micros());
+    println!("Total number of stones after 75 blinks: {}", part_2.values().sum::<usize>());
+    println!("Part 2 took: {:?}", start.elapsed());
     
 }
 
