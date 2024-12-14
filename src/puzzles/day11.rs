@@ -77,7 +77,7 @@ pub fn solve(input: String) {
     println!("Part 1 took: {:?}", start.elapsed());
 
     let start = Instant::now();
-    let part_2 = simulate_blinks(&part_1, 50);
+    let part_2 = simulate_blinks(&part_1, 5000);
 
     println!("Total unique stones after 75 blinks: {}", part_2.len());
     println!("Total number of stones after 75 blinks: {}", part_2.values().sum::<usize>());
