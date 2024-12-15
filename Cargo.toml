@@ -6,3 +6,4 @@ edition = "2021"
 [dependencies]
 nom = "7"
 timing_util = { path = "./timing_util" }
+num = "0.4.3"
