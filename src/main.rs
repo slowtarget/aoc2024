@@ -62,6 +62,9 @@ fn main() {
                 "13" => {
                     println!("{:?}", day13::solve(input));
                 }
+                "14" => {
+                    println!("{:?}", day14::solve(input));
+                }
                 _ => panic!("Day {} not found", day),
             }
         }
