@@ -79,7 +79,7 @@ fn get_quadrant(point: &Point, width: usize, height: usize) -> Option<usize> {
 
 fn print_grid(points: &Vec<Point>, width: usize, height: usize) {
     let mut grid = vec!{0; height * width};
-    points.iter().for_each(| Point {x,y}| grid[(*y * width + *x)] +=1);
+    points.iter().for_each(| Point {x,y}| grid[*y * width + *x] +=1);
     for y in 0..height {
         println!(
             "{}",

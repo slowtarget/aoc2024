@@ -1,4 +1,9 @@
+extern crate core;
+
+use std::time::Instant;
 use std::fs;
+use timing_util::measure_time;
+
 mod puzzles;
 use crate::puzzles::*;
 fn main() {
@@ -63,7 +68,13 @@ fn main() {
                     println!("{:?}", day13::solve(input));
                 }
                 "14" => {
-                    println!("{:?}", day14::solve(input));
+                    println!("{:?}", measure_time!(day14::solve(input)));
+                }
+                "16" => {
+                    println!("{:?}", measure_time!(day16::solve(input)));
+                }
+                "18" => {
+                    println!("{:?}", measure_time!(day18::solve(input)));
                 }
                 _ => panic!("Day {} not found", day),
             }
