@@ -165,7 +165,6 @@ pub(crate) fn solve(input: String) -> (i32, String) {
     let width = 71;
     let height = 71;
     let mut grid = Grid::new(&input_bytes[..1024], width, height);
-    let last = grid.3.to_string();
     let part_1_result = grid.find_shortest_path();
 
     let mut result = 0;
