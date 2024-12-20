@@ -47,8 +47,6 @@ impl Path {
 struct Grid (Vec<Vec<Option<Path>>>, Point, Point, Point);
 impl Grid {
     fn new(input: &[Point], width: usize, height: usize) -> Self {
-        println!("length of input {:?}", input.len());
-        println!("last {:?}", input.last().unwrap());
         let start = Point::new(0, 0);
         let end = Point::new(width - 1, height - 1);
         let mut grid: Vec<Vec<Option<Path>>> = vec! {vec! {Default::default(); width}; height};
