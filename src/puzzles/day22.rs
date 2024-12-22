@@ -1,10 +1,10 @@
 use crate::puzzles::day14;
+use ahash::AHashMap;
 use nom::bytes::complete::tag;
 use nom::multi::separated_list1;
 use nom::IResult;
-use std::collections::{HashMap};
-use timing_util::measure_time;
 use std::time::Instant;
+use timing_util::measure_time;
 const MASK: i32 = 16777216 - 1;
 
 fn parse_line(input: &str) -> IResult<&str, usize> {
@@ -16,24 +16,11 @@ fn parse(input: String) -> Vec<usize> {
         .unwrap()
         .1
 }
-fn prune(input: i32) -> i32 {
-    input & MASK
-}
-
-fn mix(secret: i32, number: i32) -> i32 {
-    number ^ secret
-}
+#[inline(always)]
 fn next(current: i32) -> i32 {
-    let mut result = prune(mix(current, current << 6));
-    // println!(
-    //     "current {:b} current * 64 {:b} xor: {:b} mixed and pruned {}",
-    //     current,
-    //     current * 64,
-    //     current ^ (current * 64),
-    //     result
-    // );
-    result = prune(mix(result, result >> 5));
-    prune(mix(result, result << 11))
+    let mut result = ((current << 6) ^ current) & MASK;
+    result = ((result >> 5) ^ result) & MASK;
+    ((result << 11) ^ result) & MASK
 }
 fn two_thousandth(input: i32) -> i32 {
     let mut result = input;
@@ -43,47 +30,49 @@ fn two_thousandth(input: i32) -> i32 {
     }
     result
 }
-fn get_sequences(input: i32) -> HashMap<[i32; 4], usize> {
+fn get_sequences(input: i32) -> AHashMap<[i8; 4], usize> {
     let mut secret = input;
-    let mut changes = Vec::with_capacity(4);
-    let mut previous = secret % 10;
-    let mut sequences: HashMap<[i32; 4], usize> = HashMap::with_capacity(2000);
-    for _ in 0..2000 {
+    let mut changes:[i8;2000] = [0; 2000];
+    let mut digits:[i8;2000] = [0; 2000];
+    let mut previous: i8 = (secret % 10) as i8;
+    for i in 0..2000 {
         secret = next(secret);
-        let digit = secret % 10;
-        changes.push(digit - previous);
+        let digit = (secret % 10) as i8;
+        digits[i] = digit;
+        changes[i] = digit - previous;
         previous = digit;
-
-        if changes.len() == 4 {
-            let sequence: [i32; 4] = changes[..].try_into().unwrap();
-            changes.remove(0);
-
-            if sequences.contains_key(&sequence) {
-                continue;
-            }
-            sequences.insert(sequence, digit as usize);
-        }
+    }
+    let mut sequences: AHashMap<[i8; 4], usize> = AHashMap::with_capacity(2000 - 4);
+    for start in 0..=(2000 - 4) {
+        let seq: [i8; 4] = changes[start..start+4].try_into().unwrap();
+        let value = digits[start + 3];
+        sequences.entry(seq).or_insert(value as usize);
     }
     sequences
 }
 pub(crate) fn solve(input: String) -> (i32, i32) {
     let numbers = parse(input);
-    let part_1 = numbers
-        .iter()
-        .fold(0, |sum, number| sum + two_thousandth(*number as i32));
+    let part_1 = measure_time!(part_1(&numbers));
 
     (part_1, measure_time!( part_2(numbers))) // 225 is too low
 }
 
+fn part_1(numbers: &Vec<usize>) -> i32 {
+    numbers
+        .iter()
+        .map(|number| two_thousandth(*number as i32))
+        .sum()
+}
+
 fn part_2(numbers: Vec<usize>) -> i32 {
-    let mut sequence_totals: HashMap<[i32; 4], usize> = HashMap::with_capacity(10000);
+    let mut sequence_totals: AHashMap<[i8; 4], usize> = AHashMap::with_capacity(10000);
     for number in numbers {
         let sequences = get_sequences(number as i32);
         for (sequence, value) in sequences {
-            let sum = sequence_totals.get(&sequence).unwrap_or(&0) + value;
-            sequence_totals.insert(sequence, sum);
+            *sequence_totals.entry(sequence).or_insert(0) += value;
         }
     }
+
     *sequence_totals.values().max().unwrap() as i32
 }
 
@@ -107,13 +96,13 @@ mod tests {
 
             println!("{:b}", MASK);
 
-            assert_eq!(prune(100000000), 16113920);
+            assert_eq!(100000000 & MASK, 16113920);
             assert_eq!(100000000 & MASK, 16113920);
         }
 
         #[test]
         fn mix_test() {
-            assert_eq!(mix(42, 15), 37);
+            assert_eq!(15 ^ 42, 37);
         }
 
         #[test]

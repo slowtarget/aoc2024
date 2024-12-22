@@ -8,3 +8,4 @@ nom = "7"
 timing_util = { path = "./timing_util" }
 num = "0.4.3"
 lazy_static = "1.5.0"
+ahash = "0.8.11"
