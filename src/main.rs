@@ -70,6 +70,9 @@ fn main() {
                 "14" => {
                     println!("{:?}", measure_time!(day14::solve(input)));
                 }
+                "15" => {
+                    println!("{:?}", measure_time!(day15::solve(input)));
+                }
                 "16" => {
                     println!("{:?}", measure_time!(day16::solve(input)));
                 }
@@ -78,6 +81,9 @@ fn main() {
                 }
                 "20" => {
                     println!("{:?}", measure_time!(day20::solve(input)));
+                }
+                "21" => {
+                    println!("{:?}", measure_time!(day21::solve(input)));
                 }
                 _ => panic!("Day {} not found", day),
             }
