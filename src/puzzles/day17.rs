@@ -85,7 +85,7 @@ impl Instruction {
     }
 
     fn get_combo(operand: i32, register: &Register) -> i32 {
-        let combo = match operand {
+        match operand {
             0 => 0,
             1 => 1,
             2 => 2,
@@ -95,9 +95,7 @@ impl Instruction {
             6 => register.c,
             7 => panic!("Invalid operand: {}", operand),
             _ => panic!("Unknown instruction: {}", operand),
-        };
-        println!("Combo: {combo}");
-        combo
+        }
     }
 
     fn act(&self, register: &Register, pointer: &usize) -> (Register, usize, Vec<i32>) {
@@ -205,7 +203,20 @@ fn parse_input(input: &str) -> IResult<&str, Computer> {
 }
 
 fn part_2(computer: &Computer) -> i32 {
-    1
+
+    let program = computer.program.clone();
+    let expected = program
+        .iter()
+        .map(|x| x.to_string())
+        .collect::<Vec<String>>()
+        .join(",");
+    println!("Expected: {expected}");
+    let mut a = 0;
+    while expected != part_1(&Computer { store: Register { a, b: 0, c: 0 }, program: program.clone() }).0  {
+        a += 1;
+    }
+    println!("A: {a}");
+    a
 }
 
 fn part_1(computer: &Computer) -> (String, Register) {
@@ -445,5 +456,29 @@ mod tests {
         };
         let (output, _register) = part_1(&computer);
         assert_eq!(output, "4,6,3,5,6,3,5,2,1,0");
+    }
+    // Register A: 2024
+    // Register B: 0
+    // Register C: 0
+    // 
+    // Program: 0,3,5,4,3,0
+    // This program outputs a copy of itself if register A is instead initialized to 117440. (The original initial value of register A, 2024, is ignored.)
+    #[test]
+    fn testing_part_1_using_part_2_provided_test() {
+        let computer = Computer {
+            store: Register { a: 117440, b: 0, c: 0 },
+            program: vec![0,3,5,4,3,0],
+        };
+        let (output, _register) = part_1(&computer);
+        assert_eq!(output, "0,3,5,4,3,0");
+    }
+    #[test]
+    fn part_2_provided_test() {
+        let computer = Computer {
+            store: Register { a: 2024, b: 0, c: 0 },
+            program: vec![0,3,5,4,3,0],
+        };
+        let result = part_2(&computer);
+        assert_eq!(result, 117440);
     }
 }
