@@ -96,6 +96,7 @@ impl Instruction {
             7 => panic!("Invalid operand: {}", operand),
             _ => panic!("Unknown instruction: {}", operand),
         };
+        println!("Combo: {combo}");
         combo
     }
 
@@ -103,7 +104,7 @@ impl Instruction {
         match self {
             Adv(operand) => (
                 Register {
-                    a: register.a / pow(2, Self::get_combo(*operand, register) as usize),
+                    a: register.a / pow(2_i32, Self::get_combo(*operand, register) as usize),
                     b: register.b,
                     c: register.c,
                 },
@@ -165,7 +166,7 @@ impl Instruction {
             Bdv(operand) => (
                 Register {
                     a: register.a,
-                    b: register.b / pow(2, Self::get_combo(*operand, register) as usize),
+                    b: register.a / pow(2, Self::get_combo(*operand, register) as usize),
                     c: register.c,
                 },
                 pointer + 2,
@@ -175,7 +176,7 @@ impl Instruction {
                 Register {
                     a: register.a,
                     b: register.b,
-                    c: register.c / pow(2, Self::get_combo(*operand, register) as usize),
+                    c: register.a / pow(2, Self::get_combo(*operand, register) as usize),
                 },
                 pointer + 2,
                 Vec::new(),
@@ -246,7 +247,36 @@ pub(crate) fn solve(input: String) -> (String, i32) {
 #[cfg(test)]
 mod tests {
     use super::*;
-
+    //     Adv(i32),
+    #[test]
+    fn adv_combo_test() {
+        let instruction = Instruction::new(0, 5);
+        let register = Register { a: 64, b: 5, c: 9 };
+        let (register, pointer, output) = instruction.act(&register, &0);
+        assert_eq!(register, Register { a: 2, b: 5, c: 9 });
+        assert_eq!(pointer, 2);
+        assert_eq!(output, Vec::new());
+    }
+    #[test]
+    fn adv_literal_test() {
+        let instruction = Instruction::new(0, 3);
+        let register = Register { a: 64, b: 5, c: 9 };
+        let (register, pointer, output) = instruction.act(&register, &0);
+        assert_eq!(register, Register { a: 8, b: 5, c: 9 });
+        assert_eq!(pointer, 2);
+        assert_eq!(output, Vec::new());
+    }
+    //     Bxl(i32),
+    #[test]
+    fn bxl_test() {
+        let instruction = Instruction::new(1, 6);
+        let register = Register { a: 64, b: 6, c: 9 };
+        let (register, pointer, output) = instruction.act(&register, &0);
+        assert_eq!(register, Register { a: 64, b: 0, c: 9 });
+        assert_eq!(pointer, 2);
+        assert_eq!(output, Vec::new());
+    }
+    //     Bst(i32),
     #[test]
     fn bst_test() {
         let instruction = Instruction::new(2, 6);
@@ -255,6 +285,102 @@ mod tests {
         assert_eq!(pointer, 2);
         assert_eq!(output, Vec::new());
     }
+    //     Jnz(i32),
+    #[test]
+    fn jnz_test() {
+        let instruction = Instruction::new(3, 6);
+        let register = &Register { a: 4, b: 0, c: 9 };
+        let (register, pointer, output) = instruction.act(register, &0);
+        assert_eq!(register, Register { a: 4, b: 0, c: 9 });
+        assert_eq!(pointer, 6);
+        assert_eq!(output, Vec::new());
+    }
+    #[test]
+    fn jnz_0_test() {
+        let instruction = Instruction::new(3, 6);
+        let register = &Register { a: 0, b: 0, c: 9 };
+        let (register, pointer, output) = instruction.act(register, &2);
+        assert_eq!(register, Register { a: 0, b: 0, c: 9 });
+        assert_eq!(pointer, 4);
+        assert_eq!(output, Vec::new());
+    }
+    //     Bxc(()),
+    #[test]
+    fn bxc_test() {
+        let instruction = Instruction::new(4, 6);
+        let register = &Register { a: 0, b: 16, c: 14 };
+        let (register, pointer, output) = instruction.act(register, &2);
+        assert_eq!(register, Register { a: 0, b: 30, c: 14 });
+        assert_eq!(pointer, 4);
+        assert_eq!(output, Vec::new());
+    }
+    #[test]
+    fn bxc_2_test() {
+        let instruction = Instruction::new(4, 6);
+        let register = &Register { a: 0, b: 12, c: 10 };
+        let (register, pointer, output) = instruction.act(register, &2);
+        assert_eq!(register, Register { a: 0, b: 6, c: 10 });
+        assert_eq!(pointer, 4);
+        assert_eq!(output, Vec::new());
+    }
+    //     Out(i32),
+    #[test]
+    fn out_combo_test() {
+        let instruction = Instruction::new(5, 6);
+        let register = Register { a: 12, b: 5, c: 64 };
+        let (register, pointer, output) = instruction.act(&register, &0);
+        assert_eq!(register, Register { a: 12, b: 5, c: 64 });
+        assert_eq!(pointer, 2);
+        assert_eq!(output, vec![0]);
+    }
+    #[test]
+    fn out_literal_test() {
+        let instruction = Instruction::new(5, 3);
+        let register = Register { a: 64, b: 5, c: 9 };
+        let (register, pointer, output) = instruction.act(&register, &0);
+        assert_eq!(register, Register { a: 64, b: 5, c: 9 });
+        assert_eq!(pointer, 2);
+        assert_eq!(output, vec![3]);
+    }
+    //     Bdv(i32),
+    #[test]
+    fn bdv_combo_test() {
+        let instruction = Instruction::new(6, 6);
+        let register = Register { a: 64, b: 10, c: 5 };
+        let (register, pointer, output) = instruction.act(&register, &0);
+        assert_eq!(register, Register { a: 64, b: 2, c: 5 });
+        assert_eq!(pointer, 2);
+        assert_eq!(output, Vec::new());
+    }
+    #[test]
+    fn bdv_literal_test() {
+        let instruction = Instruction::new(6, 3);
+        let register = Register { a: 64, b: 64, c: 9 };
+        let (register, pointer, output) = instruction.act(&register, &0);
+        assert_eq!(register, Register { a: 64, b: 8, c: 9 });
+        assert_eq!(pointer, 2);
+        assert_eq!(output, Vec::new());
+    }
+    //     Cdv(i32),
+    #[test]
+    fn cdv_combo_test() {
+        let instruction = Instruction::new(7, 5);
+        let register = Register { a: 64, b: 5, c: 64 };
+        let (register, pointer, output) = instruction.act(&register, &0);
+        assert_eq!(register, Register { a: 64, b: 5, c: 2 });
+        assert_eq!(pointer, 2);
+        assert_eq!(output, Vec::new());
+    }
+    #[test]
+    fn cdv_literal_test() {
+        let instruction = Instruction::new(7, 3);
+        let register = Register { a: 64, b: 5, c: 64 };
+        let (register, pointer, output) = instruction.act(&register, &0);
+        assert_eq!(register, Register { a: 64, b: 5, c: 8 });
+        assert_eq!(pointer, 2);
+        assert_eq!(output, Vec::new());
+    }
+
     //     If register A contains 10, the program 5,0,5,1,5,4 would output 0,1,2.
     #[test]
     fn computer_test() {
