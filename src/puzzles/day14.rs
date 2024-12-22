@@ -23,7 +23,7 @@ struct Robot {
     velocity: Velocity
 }
 // Helper function to parse a single unsigned integer
-fn parse_unsigned(input: &str) -> IResult<&str, usize> {
+pub fn parse_unsigned(input: &str) -> IResult<&str, usize> {
     let (i, number) = map_res(recognize(preceded(opt(tag("-")), digit1)), |s| {
         usize::from_str(s)
     })(input)?;

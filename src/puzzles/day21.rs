@@ -321,7 +321,17 @@ fn get_complexity(code: usize) -> i32 {
     println!("{}: {:?}", code, me.len());
     me.len() as i32 * code as i32
 }
+pub(crate) fn solve(input: String) -> (i32, i32) {
+    let codes = parse(input);
+    println!("{:?}", codes);
 
+    let mut sum = 0;
+    for code in codes {
+        sum += get_complexity(code);
+    }
+
+    (sum,1) // 439_726 is too high // 180_204 is too high // 176_964 is too high
+}
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -366,14 +376,4 @@ mod tests {
     // v<<A>>^AvA^Av<<A>>^AA<vA<A>>^AAvAA<^A>A<vA^>AA<A>Av<<A>A^>AAA<Av>A^A
 }
 
-pub(crate) fn solve(input: String) -> (i32, i32) {
-    let codes = parse(input);
-    println!("{:?}", codes);
 
-    let mut sum = 0;
-    for code in codes {
-        sum += get_complexity(code);
-    }
-    
-    (sum,1) // 439_726 is too high // 180_204 is too high // 176_964 is too high
-}
