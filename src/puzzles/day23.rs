@@ -69,12 +69,18 @@ fn part_1(computer_index: &Vec<&str>, computer_map: &HashMap<usize, Vec<usize>>)
         .enumerate()
         .filter(|(_i, c)| c.starts_with("t"))
         .for_each(|(a, _c)| {
-            computer_map.get(&a).unwrap().iter().for_each(|b| {
+            computer_map
+                .get(&a)
+                .unwrap()
+                .iter()
+                .filter(|b| **b != a)
+                .for_each(|b| {
                 computer_map
                     .get(b)
                     .unwrap()
                     .iter()
                     .filter(|c| **c != a)
+                    .filter(|c| **c != *b)
                     .filter(|c| computer_map.get(c).unwrap().contains(&a))
                     .map(|c| [a, *b, *c])
                     .map(|mut triple| {
@@ -179,7 +185,7 @@ mod tests {
     #[test]
     fn provided_part_1_test() {
         let pairs = &parse(input()).unwrap().1;
-        let (computer_index, computer_lookup, computer_map) = prep(pairs);
+        let (computer_index, _computer_lookup, computer_map) = prep(pairs);
         println!("Computer Index: {:?}", computer_index);
         println!("Computer Map: {:?}", computer_map);
         assert_eq!(part_1(&computer_index, &computer_map), 7);
