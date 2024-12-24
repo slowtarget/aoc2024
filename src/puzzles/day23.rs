@@ -4,7 +4,8 @@ use nom::multi::separated_list1;
 use nom::sequence::separated_pair;
 use nom::IResult;
 use std::collections::{HashMap, HashSet};
-
+use timing_util::measure_time;
+use std::time::Instant;
 // --- Day 23: LAN Party ---
 // read all connections in to a list of tuples
 // populate a map for each connection: key: computer - value: list of connected computers
@@ -32,7 +33,6 @@ fn prep<'a>(
     pairs: &'a Vec<(&'a str, &'a str)>,
 ) -> (
     Vec<&'a str>,
-    HashMap<&'a str, usize>,
     HashMap<usize, Vec<usize>>,
 ) {
     let computer_set: HashSet<&str> = pairs.iter().flat_map(|(a, b)| vec![*a, *b]).collect();
@@ -58,8 +58,7 @@ fn prep<'a>(
     for (_k, v) in computer_map.iter_mut() {
         v.sort();
     }
-
-    (computer_index, computer_lookup, computer_map)
+    (computer_index, computer_map)
 }
 fn part_1(computer_index: &Vec<&str>, computer_map: &HashMap<usize, Vec<usize>>) -> usize {
     let mut connected_computers: HashSet<usize> = HashSet::new();
@@ -160,16 +159,12 @@ fn part_2(computer_index: &Vec<&str>, computer_map: &HashMap<usize, Vec<usize>>)
 pub(crate) fn solve(input: String) -> (String, String) {
     match parse(&input) {
         Ok((_remaining, pairs)) => {
-            // println!("Parsed Pairs: {pairs:?}");
-            // println!("Remaining: {remaining:?}");
-
-            let (computer_index, computer_lookup, computer_map) = prep(&pairs);
+            let (computer_index, computer_map) = measure_time!(prep(&pairs));
             println!("Pairs: {:?}", pairs.len());
             println!("Computer Set: {:?}", computer_index.len());
-            println!("Computer Lookup: {:?}", computer_lookup.len());
             println!("Computer Map: {:?}", computer_map.len());
-            let part_1_result: usize = part_1(&computer_index, &computer_map);
-            let part_2_result: String = part_2(&computer_index, &computer_map);
+            let part_1_result: usize = measure_time!(part_1(&computer_index, &computer_map));
+            let part_2_result: String = measure_time!(part_2(&computer_index, &computer_map));
             (part_1_result.to_string(), part_2_result)
         }
         Err(err) => {
@@ -185,7 +180,7 @@ mod tests {
     #[test]
     fn provided_part_1_test() {
         let pairs = &parse(input()).unwrap().1;
-        let (computer_index, _computer_lookup, computer_map) = prep(pairs);
+        let (computer_index, computer_map) = prep(pairs);
         println!("Computer Index: {:?}", computer_index);
         println!("Computer Map: {:?}", computer_map);
         assert_eq!(part_1(&computer_index, &computer_map), 7);
@@ -193,7 +188,7 @@ mod tests {
     #[test]
     fn provided_part_2_test() {
         let pairs = &parse(input()).unwrap().1;
-        let (computer_index, computer_lookup, computer_map) = prep(pairs);
+        let (computer_index, computer_map) = prep(pairs);
         println!("Computer Index: {:?}", computer_index);
         println!("Computer Map: {:?}", computer_map);
         assert_eq!(
