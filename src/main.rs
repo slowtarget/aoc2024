@@ -94,6 +94,9 @@ fn main() {
                 "23" => {
                     println!("{:?}", measure_time!(day23::solve(input)));
                 }
+                "24" => {
+                    println!("{:?}", measure_time!(day24::solve(input)));
+                }
                 _ => panic!("Day {} not found", day),
             }
         }
