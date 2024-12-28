@@ -82,6 +82,9 @@ fn main() {
                 "18" => {
                     println!("{:?}", measure_time!(day18::solve(input)));
                 }
+                "19" => {
+                    println!("{:?}", measure_time!(day19::solve(input)));
+                }
                 "20" => {
                     println!("{:?}", measure_time!(day20::solve(input)));
                 }
