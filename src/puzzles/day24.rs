@@ -1,6 +1,3 @@
-use std::fmt::Write as _;
-use std::io::Write as _;
-use std::fs::File;
 use nom::{
     branch::alt,
     bytes::complete::{tag, take_while1},
@@ -10,6 +7,10 @@ use nom::{
     ,
     IResult,
 };
+use num::abs;
+use std::fmt::Write as _;
+use std::fs::File;
+use std::io::Write as _;
 use std::time::Instant;
 use timing_util::measure_time;
 #[derive(Debug, Clone)]
@@ -88,61 +89,82 @@ fn parse(input: &str) -> IResult<&str, (Vec<Wire>, Vec<(GateType, [Wire;2], Wire
 }
 
 fn part_1(wires: &Vec<Wire>, gates: &Vec<Gate>) -> String {
-    let mut wires = wires.clone();
+    println!("part_1 Wires: {:#?}", wires.len());
+    let result = resolve(gates, wires).to_string();
+    println!("part_1 done: {:#?}", wires.len());
+    result
+}
+
+fn resolve(gates: &Vec<Gate>, wires: &[Wire]) -> u64 {
+    let mut mut_wires = wires.to_vec();
+    // println!("Resolving for: X {:#?} Y {}",  get_register(&mut mut_wires, 'x'), get_register(&mut mut_wires, 'y'));
     let mut changes = true;
     while changes {
         changes = false;
         for gate in gates {
-            if let Some(_output) = wires[gate.output].value {
+            if let Some(_output) = mut_wires[gate.output].value {
                 continue;
             }
-            if let (Some(in1), Some(in2)) = (wires[gate.inputs[0]].value, wires[gate.inputs[1]].value) {
+            if let (Some(in1), Some(in2)) = (mut_wires[gate.inputs[0]].value, mut_wires[gate.inputs[1]].value) {
                 let result = match gate.gate_type {
                     GateType::AND => in1 & in2,
                     GateType::OR => in1 | in2,
                     GateType::XOR => in1 ^ in2,
                 };
-                wires[gate.output].value = Some(result);
+                mut_wires[gate.output].value = Some(result);
                 changes = true;
             }
         }
     }
-    let mut zs: Vec<(&String, u8)> = wires
+    let register = 'z';
+    // println!("Wires: {:#?}", mut_wires);
+    let decimal = get_register(&mut mut_wires, register);
+    decimal
+}
+
+fn get_register(mut_wires: &mut Vec<Wire>, register: char) -> u64 {
+    let mut zs: Vec<(&String, u8)> = mut_wires
         .iter()
-        .filter(|wire| wire.name.chars().nth(0) == Some('z'))
-        .map(|wire| (&wire.name,wire.value.unwrap()))
+        .filter(|wire| wire.name.chars().nth(0) == Some(register))
+        .map(|wire| (&wire.name, wire.value.unwrap()))
         .collect::<Vec<(&String, u8)>>();
     zs.sort();
     zs.reverse();
-    zs.iter().for_each(|(name, value)| {
-        println!("{}: {}", name, value);
-    });
+
     let binary = zs.iter().map(|(_name, value)| value).map(|v| v.to_string()).collect::<Vec<String>>().join("");
     let decimal = u64::from_str_radix(&binary, 2).unwrap();
-    decimal.to_string()
+    decimal
 }
+
 fn generate_plantuml(wires: &[Wire], gates: &[Gate]) -> String {
-    let mut plantuml = String::new();
-    writeln!(plantuml, "@startuml").unwrap();
-    writeln!(plantuml, "left to right direction").unwrap();
-    writeln!(plantuml, "").unwrap();
-    
-    writeln!(plantuml).unwrap();
-    // Define inputs and outputs
+
+    let mut adders: Vec<Vec<String>> = vec![Vec::new(); 100];
     let mut names = wires.iter().map(|wire| wire.name.clone()).collect::<Vec<String>>();
     names.sort();
-    for (i, wire) in names.iter().enumerate() {
+    for (_i, wire) in names.iter().enumerate() {
         if let Some(wire_label) = wire_rectangle(wire) {
             let color = match wire_label {
                 "in" => "#green",
                 "out" => "#red",
                 _ => "#black",
             };
-            writeln!(plantuml, "storage {} \"{}\" as {}", color, wire_label, wire).unwrap();
+            let id = usize::from_str_radix(&wire[1..], 10).unwrap();
+            let mut storage = String::new();
+            writeln!(storage, "storage {} \"{}\" as {}", color, wire_label, wire).unwrap();
+            adders[id].push(storage);
         }
     }
+
+    let mut plantuml = String::new();
+    writeln!(plantuml, "@startuml").unwrap();
+    writeln!(plantuml, "left to right direction").unwrap();
+    writeln!(plantuml, "").unwrap();
+
     writeln!(plantuml).unwrap();
-    
+    // Define inputs and outputs
+
+    writeln!(plantuml).unwrap();
+
     // Define gates and connections
     for (i, gate) in gates.iter().enumerate() {
         let gate_label = match gate.gate_type {
@@ -155,10 +177,37 @@ fn generate_plantuml(wires: &[Wire], gates: &[Gate]) -> String {
             GateType::OR => "cloud",
             GateType::XOR => "boundary",
         };
-        writeln!(plantuml, "{} \"{}\" as gate_{}", shape, gate_label, i).unwrap();
+        let mut gateuml = String::new();
+        writeln!(gateuml, "{} \"{}\" as gate_{}", shape, gate_label, i).unwrap();
+        let mut gate_wires:Vec<usize> = gate.inputs.clone().iter().map(|idx| *idx).collect();
+        gate_wires.push(gate.output.clone());
+        let mut adder_idx: Option<usize> = None;
+        gate_wires.iter().for_each(|idx| {
+            let wire = &wires[*idx];
+            if let Some(_wire_label) = wire_rectangle(wire.name.as_str()) {
+                adder_idx = Some(usize::from_str_radix(&wire.name[1..], 10).unwrap());
+            }
+        });
+        if let Some(adder_idx) = adder_idx {
+            adders[adder_idx].push(gateuml.clone());
+        } else {
+            writeln!(plantuml, "{}", gateuml).unwrap();
+        }
+    }
+
+    // adders
+    for (i, adder) in adders.iter().enumerate() {
+        if adder.len() > 0 {
+            writeln!(plantuml, "package adder_{} {{", i).unwrap();
+            for line in adder {
+                writeln!(plantuml, "{}", line).unwrap();
+            }
+            writeln!(plantuml, "}}").unwrap();
+        }
     }
 
 
+    // wires
     for (i, gate) in gates.iter().enumerate() {
         let output = &wires[gate.output];
 
@@ -180,7 +229,6 @@ fn generate_plantuml(wires: &[Wire], gates: &[Gate]) -> String {
         }
     }
     writeln!(plantuml).unwrap();
-
     writeln!(plantuml, "@enduml").unwrap();
     plantuml
 }
@@ -200,19 +248,91 @@ fn write_string_to_file(filename: &str, content: &str) -> std::io::Result<()> {
     Ok(())
 }
 fn part_2(wires: &Vec<Wire>, gates: &Vec<Gate>) -> String {
-    write_string_to_file("input/day24.backup.puml", &generate_plantuml(wires, gates)).unwrap();
-    String::new()
+    write_string_to_file("input/day24.puml", &generate_plantuml(wires, gates)).unwrap();
+    let wires = wires.clone();
+    let mut input = wires
+        .iter()
+        .filter(|wire| wire.name.starts_with('x'))
+        .map(|wire| wire.name.clone())
+        .map(|name| {usize::from_str_radix(&name[1..], 10).unwrap()})
+            .collect::<Vec<usize>>();
+    input.sort();
+    let max_bits = *input.last().unwrap() as i32;
+    // create a map of wires using wire name as the key
+
+
+    // for each bit from 0..=max_bit create inputs where x = 0 and y = 1 >> bit -- expected addition will be 2^bit
+    // then do the same but reversed for x = 1 >> bit and y = 0
+    for bit in 0..=max_bits {
+        let x:u64 = 0;
+        let y:u64 = 1 << bit;
+        let input_wires = set_inputs(&wires, max_bits, x, y);
+        let result = resolve(gates, &input_wires);
+        let expected = x + y;
+        if (result != expected) {
+            let diff = abs(result as i64 - expected as i64);
+            let mut diff_bits: Vec<i32> = vec![];
+            for bit in 0..=max_bits {
+                let mask = 1 << bit;
+                if (diff & mask) > 0 {
+                    diff_bits.push(bit);
+                }
+            }
+            println!("Bit: {} Result: {} Expected: {} Difference Bits = {:#?}", bit, result, expected, diff_bits);
+        }
+    }
+    for bit in 0..max_bits {
+        let x:u64 = (1 << bit) + (1 << (bit + 1));
+        let y:u64 = (1 << bit) + (1 << (bit + 1));
+        let input_wires = set_inputs(&wires, max_bits, x, y);
+        let result = resolve(gates, &input_wires);
+        let expected = x + y;
+        if (result != expected) {
+            let diff = abs(result as i64 - expected as i64);
+            let mut diff_bits: Vec<i32> = vec![];
+            for bit in 0..=max_bits {
+                let mask = 1 << bit;
+                if (diff & mask) > 0 {
+                    diff_bits.push(bit);
+                }
+            }
+            println!("Bit: {} Result: {} Expected: {} Difference Bits = {:#?}", bit, result, expected, diff_bits);
+        }
+    }
+    let mut result = vec!["","","","","","","",""];
+    result.sort();
+    let part_2 = result.join(",");
+    part_2
+
+}
+
+fn set_inputs(wires: &[Wire], max_bits: i32, x: u64, y: u64) -> Vec<Wire> {
+    let mut input_wires = wires.to_vec();
+    let mut updates: Vec<(usize, Wire)> = vec![];
+    for i in 0..=max_bits {
+        updates.push(get_update(&input_wires, i, 'x', x).unwrap());
+        updates.push(get_update(&input_wires, i, 'y', y).unwrap());
+    }
+    updates.iter().for_each(|(j, wire)| {
+        input_wires[*j] = wire.clone();
+    });
+    input_wires
+}
+
+fn get_update(input_wires: &[Wire], bit: i32, register: char, value: u64) -> Option<(usize, Wire)> {
+    let mut update: Option<(usize, Wire)> = None;
+    let name = format!("{}{:02}", register, bit);
+    input_wires.iter().enumerate().filter(|(j, w)| w.name == name.as_str()).for_each(|(j, wire)| {
+        let mut wire = wire.clone();
+        wire.value = Some(((value >> bit) & 1) as u8);
+        update = Some((j, wire));
+    });
+    update
 }
 
 pub(crate) fn solve<'a>(input: String) -> (String, String) {
     match parse(&input) {
         Ok((_remaining, (wires, gates))) => {
-
-            // println!("Wires: {:?}", wires.len());
-            // println!("Wires: {:?}", wires);
-            // println!("Gates: {:?}", gates.len());
-            // println!("Wires: {:?}", wires.len());
-            // println!("Gates: {:?}", gates);
             let (wires, gates) = prep(wires, gates);
             let part_1_result: String = measure_time!(part_1(&wires, &gates));
             let part_2_result: String = measure_time!(part_2(&wires, &gates));
@@ -286,7 +406,7 @@ x02 OR y02 -> z02".to_string();
 
         assert_eq!(part_1(&wires, &gates), "2024".to_string());
     }
-    
+
     fn input() -> String {
         "\
 x00: 1
@@ -355,7 +475,7 @@ tnw OR pbm -> gnj".to_string()
             (GateType::XOR,
                  [Wire { name: "x00".to_string(), value: None }, Wire { name: "x01".to_string(), value: None }],
              Wire { name: "z01".to_string(), value: None },),
-            
+
         ];
         let (wires, gates) = prep(wires, gates);
         assert_eq!(wires.len(), 11);
@@ -364,8 +484,8 @@ tnw OR pbm -> gnj".to_string()
         assert_eq!(wires[gates[0].inputs[0]].value, Some(1));
         assert_eq!(wires[gates[0].inputs[1]].name, "x01");
         assert_eq!(wires[gates[0].output].name, "z01");
-        
-        
+
+
     }
 }
 
